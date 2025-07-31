@@ -8,7 +8,7 @@ import Services from './components/Services'
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/E-Commer-React">
       <div className="App">
         <Nav />
         <Routes>
