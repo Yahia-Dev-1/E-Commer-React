@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/E-Commer-React/static/css/main.8d3c868c.css",
+    "main.js": "/E-Commer-React/static/js/main.9bb1f033.js",
+    "index.html": "/E-Commer-React/index.html",
+    "main.8d3c868c.css.map": "/E-Commer-React/static/css/main.8d3c868c.css.map",
+    "main.9bb1f033.js.map": "/E-Commer-React/static/js/main.9bb1f033.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.8d3c868c.css",
+    "static/js/main.9bb1f033.js"
+  ]
+}
