@@ -75,6 +75,13 @@ export default function Cards({ addToCart }) {
       title: "Sneakers",
       description: "Comfortable sneakers for daily activities.",
       price: "89.99"
+    },
+    {
+      id: 5,
+      image: hoodie,
+      title: "Sneakers",
+      description: "Comfortable sneakers for daily activities.",
+      price: "89.99"
     }
   ]
 
@@ -82,7 +89,98 @@ export default function Cards({ addToCart }) {
   const handleAddToCart = (product) => {
     if (addToCart) {
       addToCart(product)
-      navigate('/cart')
+      
+             // Show cart confirmation dialog in the middle
+       const cartDialog = document.createElement('div')
+       cartDialog.innerHTML = `
+         <div style="
+           position: fixed;
+           top: 50%;
+           left: 50%;
+           transform: translate(-50%, -50%) scale(0.8);
+           background: white;
+           padding: 30px;
+           border-radius: 15px;
+           box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+           z-index: 1000;
+           text-align: center;
+           min-width: 300px;
+           opacity: 0;
+           transition: all 0.3s ease;
+         ">
+          <h3 style="margin: 0 0 15px 0; color: #333;">${product.title} added to cart!</h3>
+          <p style="margin: 0 0 20px 0; color: #666;">Would you like to go to your cart?</p>
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="goToCart" style="
+              background: #4CAF50;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 5px;
+              cursor: pointer;
+              font-weight: bold;
+            ">Go to Cart</button>
+            <button id="continueShopping" style="
+              background: #f0f0f0;
+              color: #333;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 5px;
+              cursor: pointer;
+            ">Continue Shopping</button>
+          </div>
+        </div>
+        <div style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.5);
+          z-index: 999;
+        "></div>
+      `
+             document.body.appendChild(cartDialog)
+       
+       // Trigger animation after a small delay
+       setTimeout(() => {
+         const dialogBox = cartDialog.querySelector('div')
+         if (dialogBox) {
+           dialogBox.style.transform = 'translate(-50%, -50%) scale(1)'
+           dialogBox.style.opacity = '1'
+         }
+       }, 10)
+      
+             // Add event listeners
+       document.getElementById('goToCart').addEventListener('click', () => {
+         const dialogBox = cartDialog.querySelector('div')
+         if (dialogBox) {
+           dialogBox.style.transform = 'translate(-50%, -50%) scale(0.8)'
+           dialogBox.style.opacity = '0'
+         }
+         setTimeout(() => {
+           cartDialog.remove()
+           navigate('/cart')
+         }, 300)
+       })
+       
+       document.getElementById('continueShopping').addEventListener('click', () => {
+         const dialogBox = cartDialog.querySelector('div')
+         if (dialogBox) {
+           dialogBox.style.transform = 'translate(-50%, -50%) scale(0.8)'
+           dialogBox.style.opacity = '0'
+         }
+         setTimeout(() => {
+           cartDialog.remove()
+         }, 300)
+       })
+      
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        if (document.body.contains(cartDialog)) {
+          cartDialog.remove()
+        }
+      }, 5000)
     } else {
       console.log('Add to cart function not available')
       alert('Added to cart: ' + product.title)

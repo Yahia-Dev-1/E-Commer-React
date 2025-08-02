@@ -2,6 +2,17 @@
 
 /* From Uiverse.io by andrew-demchenk0 */ 
 /* Updated to work with real images */
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
 .card {
     --font-color: #323232;
     --font-color-sub: #666;

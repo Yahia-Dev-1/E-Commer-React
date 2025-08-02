@@ -11,9 +11,10 @@
 
 /* Cart Page Styles */
 .cart-page {
-  min-height: 100vh;
+  min-height: 50px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
+  
 }
 
 .cart-header {
@@ -298,6 +299,9 @@
   .cart-content {
     grid-template-columns: 1fr;
     gap: 20px;
+    justify-content: center;
+    text-align: center;
+    width: 50px;
   }
   
   .cart-header {

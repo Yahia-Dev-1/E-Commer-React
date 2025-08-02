@@ -1,4 +1,9 @@
 body{
     background-color: #58A0C8;
- 
+    margin: 0;
+    padding: 0;
+}
+
+.App {
+    padding-top: 80px; /* مساحة للنافيجيشن الثابتة */
 }

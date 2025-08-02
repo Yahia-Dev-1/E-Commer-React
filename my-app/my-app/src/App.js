@@ -7,7 +7,7 @@ import About from './components/About'
 import Contact from './components/Contact'
 import Services from './components/Services'
 import Hero from './components/hero'
-
+import nav from './components/nav';
 import Cards from './components/cards'
 import { useState } from 'react'
 
@@ -18,21 +18,21 @@ function App() {
     const existingItem = cartItems.find(item => item.id === product.id)
     
     if (existingItem) {
-      setCartItems(cartItems.map(item => 
+      setCartItems(prevItems => prevItems.map(item => 
         item.id === product.id 
           ? { ...item, quantity: item.quantity + 1 }
           : item
       ))
     } else {
-      setCartItems([...cartItems, { ...product, quantity: 1 }])
+      setCartItems(prevItems => [...prevItems, { ...product, quantity: 1 }])
     }
   }
 
   const updateCartItemQuantity = (id, newQuantity) => {
     if (newQuantity <= 0) {
-      setCartItems(cartItems.filter(item => item.id !== id))
+      setCartItems(prevItems => prevItems.filter(item => item.id !== id))
     } else {
-      setCartItems(cartItems.map(item => 
+      setCartItems(prevItems => prevItems.map(item => 
         item.id === id ? { ...item, quantity: newQuantity } : item
       ))
     }
@@ -42,10 +42,13 @@ function App() {
     setCartItems([])
   }
 
+  // Calculate cart count - show number of unique items
+  const cartCount = cartItems.length
+
   return (
     <BrowserRouter basename="/E-Commer-React">
       <div className="App">
-        <Nav cartItemsCount={cartItems.length} />
+        <Nav cartItemsCount={cartCount} />
         <Routes>
           <Route path='/' element={
             <>

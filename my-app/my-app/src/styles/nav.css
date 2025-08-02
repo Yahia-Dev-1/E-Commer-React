@@ -4,11 +4,15 @@
     justify-content: center;
     align-items: center;
     padding: 15px 20px;
-    margin: 1rem auto;
+    margin: 0 auto;
     max-width: 1200px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  
+    z-index: 1000;
+   
 }
 
 /* Navigation Links Container */
@@ -30,15 +34,22 @@
     color: #ffffff;
     text-decoration: none;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-weight: 500;
-    padding: 0.8rem 1.5rem;
-    border-radius: 25px;
+    padding: 0.6rem 1.2rem;
+    border-radius: 20px;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 85%;
+    text-align: center;
+    font-size: 0.9rem;
+    max-width: 200px;
+    margin: 6px 0;
+    padding: 0.8rem 1.2rem;
 }
 
 /* Hover Effects */
@@ -70,24 +81,57 @@
     position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    text-align: center;
+        justify-content: center;
+    width: 25px;
 }
 
 .cart-count {
     position: absolute;
-    top: -8px;
-    right: -8px;
+    top: 2px;
+    right: 4px;
     background: #ff4757;
     color: white;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    display: flex;
+    width: 14px;
+    height: 14px;
+    display: flex !important;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.6rem;
     font-weight: bold;
-    border: 2px solid white;
+    border: 1px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    z-index: 10;
+    transition: all 0.3s ease;
+    transform: scale(1);
+    opacity: 1;
+    min-width: 14px;
+    min-height: 14px;
+    visibility: visible !important;
+}
+
+.cart-count:hover {
+    transform: scale(1.1);
+    background: #ff3742;
+}
+
+/* Animation for count changes */
+@keyframes countPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.cart-count.updated {
+    animation: countPulse 0.5s ease;
 }
 
 /* Hamburger Menu */
@@ -164,22 +208,29 @@
     .nav-links a {
         width: 85%;
         text-align: center;
-        font-size: 1.1rem;
-        max-width: 220px;
-        margin: 8px 0;
-        padding: 1rem 1.5rem;
+        font-size: 0.9rem;
+        max-width: 200px;
+        margin: 6px 0;
+        padding: 0.8rem 1.2rem;
+        width: 100%;
+        text-align: center;
+        font-size: 0.9rem;
+        max-width: 100px;
+        margin: 6px 0;
+        padding: 0.8rem 1.2rem;
     }
     
     .cart-nav-link {
         position: relative;
+        
     }
     
     .cart-count {
-        top: -5px;
-        right: -5px;
-        width: 18px;
-        height: 18px;
-        font-size: 0.7rem;
+        top: 3px;
+        right:5px;
+        width: 14px;
+        height: 14px;
+        font-size: 0.6rem;
     }
 }
 
@@ -192,6 +243,7 @@
     .nav-links {
         width: 250px;
         padding-top: 80px;
+        
     }
     
     .nav-links a {
