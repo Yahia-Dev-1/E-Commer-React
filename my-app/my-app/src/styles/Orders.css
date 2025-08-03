@@ -297,6 +297,9 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
+  max-width: 100%;
+  height: auto;
+  min-height: 80px;
 }
 
 .item-image:hover img {

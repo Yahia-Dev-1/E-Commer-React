@@ -324,6 +324,9 @@
     0 15px 40px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  max-width: 100%;
+  height: auto;
+  min-height: 80px;
 }
 
 .item-image img:hover {
@@ -675,8 +678,10 @@
   }
   
   .item-image img {
-    width: 140px;
-    height: 140px;
+    width: 100%;
+    height: auto;
+    min-height: 140px;
+    object-fit: cover;
   }
   
   .item-quantity {
@@ -720,8 +725,10 @@
   }
   
   .item-image img {
-    width: 120px;
-    height: 120px;
+    width: 100%;
+    height: auto;
+    min-height: 120px;
+    object-fit: cover;
   }
   
   .item-details h3 {

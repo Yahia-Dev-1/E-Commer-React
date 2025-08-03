@@ -1217,6 +1217,9 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
+  max-width: 100%;
+  height: auto;
+  min-height: 80px;
 }
 
 .order-item:hover .item-image img {
@@ -1327,14 +1330,51 @@
     padding: 20px;
   }
   
+  .admin-header h1 {
+    font-size: 2.5rem;
+    text-align: center;
+  }
+  
   .admin-stats {
     grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .stat-card {
+    padding: 20px;
+  }
+  
+  .admin-tabs {
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+  }
+  
+  .tab-btn {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    text-align: center;
+    border-radius: 15px;
   }
   
   .user-card, .order-card {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
+    padding: 15px;
+  }
+  
+  .user-actions, .order-actions {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .delete-btn, .reject-btn, .approve-btn, .delete-order-btn {
+    padding: 8px 16px;
+    font-size: 12px;
   }
   
   .order-items-preview {
@@ -1345,6 +1385,386 @@
     flex-direction: column;
     gap: 10px;
     align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .refresh-btn, .toggle-btn {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .order-items {
+    flex-direction: column;
+  }
+  
+  .order-item {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .order-item .item-image {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .shipping-info {
+    padding: 15px;
+  }
+  
+  .shipping-info p {
+    font-size: 12px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .stats-card {
+    padding: 15px;
+  }
+  
+  .category-item, .status-item, .product-item {
+    flex-direction: column;
+    gap: 5px;
+    text-align: center;
+  }
+  
+  .add-admin-form {
+    padding: 15px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .admin-input {
+    padding: 10px;
+    font-size: 14px;
+  }
+  
+  .add-admin-btn {
+    width: 100%;
+    padding: 12px;
+  }
+  
+  .current-admins {
+    padding: 15px;
+  }
+  
+  .admins-list {
+    gap: 10px;
+  }
+  
+  .admin-item {
+    padding: 10px;
+    flex-direction: column;
+    gap: 5px;
+    text-align: center;
+  }
+  
+  .unauthorized-content {
+    padding: 20px;
+    margin: 10px;
+  }
+  
+  .unauthorized-content h1 {
+    font-size: 2rem;
+  }
+  
+  .unauthorized-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .unauthorized-actions .add-protected-admins-btn,
+  .unauthorized-actions .fix-access-btn,
+  .back-btn {
+    width: 100%;
+    padding: 12px;
+  }
+  
+  .admin-footer {
+    padding: 15px;
+    text-align: center;
+  }
+  
+  .footer-actions {
+    margin-bottom: 10px;
+  }
+  
+  .clear-db-btn {
+    width: 100%;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-container {
+    padding: 5px;
+  }
+  
+  .admin-header {
+    padding: 15px;
+  }
+  
+  .admin-header h1 {
+    font-size: 2rem;
+  }
+  
+  .stat-card {
+    padding: 15px;
+  }
+  
+  .stat-card h3 {
+    font-size: 14px;
+  }
+  
+  .stat-card p {
+    font-size: 18px;
+  }
+  
+  .admin-tabs {
+    padding: 10px;
+    gap: 6px;
+  }
+  
+  .tab-btn {
+    padding: 10px 12px;
+    font-size: 12px;
+    border-radius: 12px;
+  }
+  
+  .user-card, .order-card {
+    padding: 10px;
+  }
+  
+  .user-info h3, .order-info h3 {
+    font-size: 16px;
+  }
+  
+  .user-email, .order-email {
+    font-size: 12px;
+  }
+  
+  .user-date, .order-date, .order-status, .order-total, .order-items, .user-orders {
+    font-size: 11px;
+  }
+  
+  .delete-btn, .reject-btn, .approve-btn, .delete-order-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+  
+  .refresh-btn, .toggle-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+  
+  .order-item .item-details h4 {
+    font-size: 14px;
+  }
+  
+  .order-item .item-price,
+  .order-item .item-quantity,
+  .order-item .item-total {
+    font-size: 12px;
+  }
+  
+  .shipping-info h4 {
+    font-size: 14px;
+  }
+  
+  .shipping-info p {
+    font-size: 11px;
+  }
+  
+  .stats-card h3 {
+    font-size: 14px;
+  }
+  
+  .category-name, .status-name, .product-name {
+    font-size: 12px;
+  }
+  
+  .category-count, .status-count, .product-price {
+    font-size: 14px;
+  }
+  
+  .add-admin-form {
+    padding: 10px;
+  }
+  
+  .form-group label {
+    font-size: 12px;
+  }
+  
+  .admin-input {
+    padding: 8px;
+    font-size: 12px;
+  }
+  
+  .add-admin-btn {
+    padding: 10px;
+    font-size: 12px;
+  }
+  
+  .current-admins h3 {
+    font-size: 16px;
+  }
+  
+  .admin-email {
+    font-size: 12px;
+  }
+  
+  .admin-status {
+    font-size: 10px;
+  }
+  
+  .unauthorized-content h1 {
+    font-size: 1.8rem;
+  }
+  
+  .unauthorized-content p {
+    font-size: 14px;
+  }
+  
+  .unauthorized-info h3 {
+    font-size: 16px;
+  }
+  
+  .unauthorized-info li {
+    font-size: 12px;
+  }
+  
+  .unauthorized-actions .add-protected-admins-btn,
+  .unauthorized-actions .fix-access-btn,
+  .back-btn {
+    padding: 10px;
+    font-size: 12px;
+  }
+  
+  .admin-footer {
+    padding: 10px;
+  }
+  
+  .warning, .save-info {
+    font-size: 11px;
+  }
+  
+  .clear-db-btn {
+    padding: 10px;
+    font-size: 12px;
+  }
+  
+  /* تحسينات إضافية للأجهزة المحمولة */
+  .admin-content {
+    padding: 20px;
+  }
+  
+  .section-header h2 {
+    font-size: 18px;
+  }
+  
+  .no-data {
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .no-data p {
+    font-size: 14px;
+  }
+  
+  .loading {
+    min-height: 300px;
+  }
+  
+  .loading p {
+    font-size: 14px;
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+  }
+  
+  /* تحسينات الوضع المظلم للأجهزة المحمولة */
+  .dark-mode .admin-content {
+    padding: 20px;
+  }
+  
+  .dark-mode .section-header h2 {
+    font-size: 18px;
+  }
+  
+  .dark-mode .no-data p {
+    font-size: 14px;
+  }
+  
+  .dark-mode .loading p {
+    font-size: 14px;
+  }
+}
+
+/* تنسيقات للشاشات المتوسطة (tablets) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .admin-container {
+    padding: 15px;
+  }
+  
+  .admin-header {
+    padding: 30px;
+  }
+  
+  .admin-header h1 {
+    font-size: 3rem;
+  }
+  
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  .admin-tabs {
+    gap: 8px;
+    padding: 15px;
+  }
+  
+  .tab-btn {
+    padding: 12px 20px;
+    font-size: 13px;
+  }
+  
+  .admin-content {
+    padding: 30px;
+  }
+  
+  .user-card, .order-card {
+    padding: 20px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  .add-admin-form {
+    padding: 25px;
+  }
+  
+  .current-admins {
+    padding: 25px;
   }
 } 
 

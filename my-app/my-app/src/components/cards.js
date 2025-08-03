@@ -12,9 +12,8 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
   const handleClick = () => {
     if (onAddToCart && !isOutOfStock) {
       onAddToCart()
-    } else if (isOutOfStock) {
-      alert('This product is out of stock and cannot be added to cart.')
     }
+    // No alert for out of stock - visual feedback is enough
   }
 
   const isOutOfStock = quantity <= 0
@@ -42,8 +41,8 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
       <div className="card-title">{title}</div>
       <div className="card-subtitle">{description}</div>
       <div className="card-quantity">
-        <span className={`quantity-badge ${isOutOfStock ? 'out-of-stock' : 'in-stock'}`}>
-          {isOutOfStock ? 'Out of Stock' : `${quantity} Available`}
+        <span className={`quantity-badge ${isOutOfStock ? 'out-of-stock' : quantity <= 5 ? 'low-stock' : 'in-stock'}`}>
+          {isOutOfStock ? 'Out of Stock' : quantity <= 5 ? `Low Stock (${quantity})` : `${quantity} Available`}
         </span>
       </div>
       <hr className="card-divider"/>
@@ -244,10 +243,21 @@ export default function Cards({ addToCart, darkMode = false }) {
         </div>
       </div>
 
-      {/* Products Count */}
-      <div className="products-count">
-        <p>Products Count: {filteredProducts.length}</p>
-      </div>
+             {/* Products Count and Stock Stats */}
+               <div className="products-count">
+          <p>Products Count: {filteredProducts.length}</p>
+          <div className="stock-stats">
+            <span className="stat-item in-stock">
+              In Stock: {filteredProducts.filter(p => p.quantity > 5).length}
+            </span>
+            <span className="stat-item low-stock">
+              Low Stock: {filteredProducts.filter(p => p.quantity > 0 && p.quantity <= 5).length}
+            </span>
+            <span className="stat-item out-of-stock">
+              Out of Stock: {filteredProducts.filter(p => p.quantity <= 0).length}
+            </span>
+          </div>
+        </div>
 
       {/* Products Grid */}
       <div className='cards-container'>
