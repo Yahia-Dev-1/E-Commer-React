@@ -1,4 +1,5 @@
 import './styles/App.css';
+import './styles/fixes.css';
 import Nav from './components/nav';
 import Cart from './components/cart';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'

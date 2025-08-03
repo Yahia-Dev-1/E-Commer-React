@@ -4,6 +4,9 @@
 /* Import Responsive Design System */
 @import './responsive.css';
 
+/* Import Emergency Fixes */
+@import './fixes.css';
+
 html, body {
   margin: 0;
   padding: 0;

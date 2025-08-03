@@ -1,0 +1,114 @@
+/* EMERGENCY FIXES - Force Dark Theme */
+* {
+  box-sizing: border-box !important;
+}
+
+html, body {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+  color: #e0e0e0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.App {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+  min-height: 100vh !important;
+}
+
+.cards-section {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+  color: #e0e0e0 !important;
+}
+
+.card {
+  background: rgba(26, 26, 46, 0.95) !important;
+  color: #e0e0e0 !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.card-title, .card-subtitle {
+  color: #e0e0e0 !important;
+}
+
+.card-btn {
+  background: #667eea !important;
+  color: white !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.search-container, .search-box, .search-input {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.search-input {
+  color: #e0e0e0 !important;
+  background: transparent !important;
+}
+
+.filter-container {
+  background: rgba(45, 55, 72, 0.9) !important;
+  color: white !important;
+}
+
+.filter-btn {
+  background: rgba(138, 43, 226, 0.2) !important;
+  color: white !important;
+  border: 2px solid rgba(138, 43, 226, 0.4) !important;
+}
+
+.products-count {
+  background: rgba(26, 26, 46, 0.95) !important;
+  color: #e0e0e0 !important;
+}
+
+.stock-stats {
+  display: flex !important;
+  gap: 15px !important;
+  flex-wrap: wrap !important;
+}
+
+.stat-item {
+  color: white !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+}
+
+.stat-item.in-stock {
+  background: #4CAF50 !important;
+}
+
+.stat-item.low-stock {
+  background: #ff9800 !important;
+}
+
+.stat-item.out-of-stock {
+  background: #f44336 !important;
+}
+
+/* Mobile fixes */
+@media (max-width: 480px) {
+  .cards-container {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+  
+  .card {
+    width: 100% !important;
+    max-width: 180px !important;
+    margin: 0 auto !important;
+  }
+  
+  .search-box {
+    max-width: 300px !important;
+  }
+  
+  .stock-stats {
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+} 
