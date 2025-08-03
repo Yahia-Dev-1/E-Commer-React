@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/E-Commer-React/static/css/main.1d2e8bc5.css",
-    "main.js": "/E-Commer-React/static/js/main.2d2806cf.js",
+    "main.js": "/E-Commer-React/static/js/main.7db8c23a.js",
     "index.html": "/E-Commer-React/index.html",
     "main.1d2e8bc5.css.map": "/E-Commer-React/static/css/main.1d2e8bc5.css.map",
-    "main.2d2806cf.js.map": "/E-Commer-React/static/js/main.2d2806cf.js.map"
+    "main.7db8c23a.js.map": "/E-Commer-React/static/js/main.7db8c23a.js.map"
   },
   "entrypoints": [
     "static/css/main.1d2e8bc5.css",
-    "static/js/main.2d2806cf.js"
+    "static/js/main.7db8c23a.js"
   ]
 }
