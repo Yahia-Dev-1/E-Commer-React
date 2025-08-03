@@ -1,14 +1,13 @@
 {
   "files": {
-    "main.css": "/E-Commer-React/static/css/main.722f23a0.css",
-    "main.js": "/E-Commer-React/static/js/main.035180d5.js",
-    "static/media/hoodie.webp": "/E-Commer-React/static/media/hoodie.0b27e1e10d7d13d90bff.webp",
+    "main.css": "/E-Commer-React/static/css/main.e02fa81e.css",
+    "main.js": "/E-Commer-React/static/js/main.b9f1228b.js",
     "index.html": "/E-Commer-React/index.html",
-    "main.722f23a0.css.map": "/E-Commer-React/static/css/main.722f23a0.css.map",
-    "main.035180d5.js.map": "/E-Commer-React/static/js/main.035180d5.js.map"
+    "main.e02fa81e.css.map": "/E-Commer-React/static/css/main.e02fa81e.css.map",
+    "main.b9f1228b.js.map": "/E-Commer-React/static/js/main.b9f1228b.js.map"
   },
   "entrypoints": [
-    "static/css/main.722f23a0.css",
-    "static/js/main.035180d5.js"
+    "static/css/main.e02fa81e.css",
+    "static/js/main.b9f1228b.js"
   ]
 }
