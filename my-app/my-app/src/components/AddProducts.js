@@ -113,6 +113,9 @@ export default function AddProducts({ darkMode = false }) {
     setProducts(updatedProducts)
     localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
     
+    // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
+    window.dispatchEvent(new Event('productsUpdated'))
+    
     // الاحتفاظ بالبيانات في النموذج بدلاً من مسحها
     // setNewProduct({
     //   title: '',
@@ -149,6 +152,10 @@ export default function AddProducts({ darkMode = false }) {
     const updatedProducts = products.filter(product => product.id !== productId)
     setProducts(updatedProducts)
     localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
+    
+    // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
+    window.dispatchEvent(new Event('productsUpdated'))
+    
     setMessage(`Product "${productToDelete.title}" deleted successfully! Remaining products: ${updatedProducts.length}`)
     setTimeout(() => setMessage(''), 3000)
   }

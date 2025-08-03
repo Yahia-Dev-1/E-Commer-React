@@ -244,6 +244,9 @@ function AppContent() {
       // حفظ المنتجات المحدثة
       localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
       
+      // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
+      window.dispatchEvent(new Event('productsUpdated'))
+      
       console.log('Product quantities updated after purchase')
       
       // إظهار رسالة للمنتجات التي نفدت مخزونها

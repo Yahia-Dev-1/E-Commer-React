@@ -83,14 +83,15 @@ export default function Cards({ addToCart, darkMode = false }) {
   const [products, setProducts] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Load products from localStorage on component mount
+  // Load products from localStorage on component mount and listen for changes
   React.useEffect(() => {
-    const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
-    if (savedProducts.length > 0) {
-      setProducts(savedProducts)
-    } else {
-      // Default products if no custom products exist
-      const defaultProducts = [
+    const loadProducts = () => {
+      const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
+      if (savedProducts.length > 0) {
+        setProducts(savedProducts)
+      } else {
+        // Default products if no custom products exist
+        const defaultProducts = [
     {
       id: 1,
       image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop",
@@ -164,7 +165,33 @@ export default function Cards({ addToCart, darkMode = false }) {
       quantity: 12
     }
   ]
-      setProducts(defaultProducts)
+        setProducts(defaultProducts)
+      }
+    }
+
+    // Load products initially
+    loadProducts()
+
+    // Listen for storage changes to update products in real-time
+    const handleStorageChange = (e) => {
+      if (e.key === 'ecommerce_products') {
+        loadProducts()
+      }
+    }
+
+    // Add event listener for storage changes
+    window.addEventListener('storage', handleStorageChange)
+
+    // Also listen for custom events (for same-tab updates)
+    const handleCustomStorageChange = () => {
+      loadProducts()
+    }
+    window.addEventListener('productsUpdated', handleCustomStorageChange)
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('productsUpdated', handleCustomStorageChange)
     }
   }, [])
 
@@ -188,6 +215,91 @@ export default function Cards({ addToCart, darkMode = false }) {
   const handleAddToCart = (product) => {
     if (addToCart) {
       addToCart(product)
+    }
+  }
+
+  // Function to refresh products from localStorage
+  const refreshProducts = () => {
+    const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
+    if (savedProducts.length > 0) {
+      setProducts(savedProducts)
+    } else {
+      // Default products if no custom products exist
+      const defaultProducts = [
+        {
+          id: 1,
+          image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop",
+          title: "Hoodie",
+          description: "Comfortable and stylish hoodie for everyday wear.",
+          price: "49.99",
+          category: "Clothing",
+          quantity: 10
+        },
+        {
+          id: 2,
+          image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
+          title: "T-Shirt",
+          description: "Classic cotton t-shirt with modern design.",
+          price: "24.99",
+          category: "Clothing",
+          quantity: 20
+        },
+        {
+          id: 3,
+          image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop",
+          title: "Jeans",
+          description: "High-quality denim jeans for a perfect fit.",
+          price: "79.99",
+          category: "Clothing",
+          quantity: 5
+        },
+        {
+          id: 4,
+          image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop",
+          title: "Sneakers",
+          description: "Comfortable sneakers for daily activities.",
+          price: "89.99",
+          category: "Shoes",
+          quantity: 0
+        },
+        {
+          id: 5,
+          image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop",
+          title: "Running Shoes",
+          description: "Professional running shoes for athletes.",
+          price: "129.99",
+          category: "Shoes",
+          quantity: 15
+        },
+        {
+          id: 6,
+          image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop",
+          title: "Watch",
+          description: "Elegant watch with modern design.",
+          price: "199.99",
+          category: "Accessories",
+          quantity: 8
+        },
+        {
+          id: 7,
+          image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
+          title: "Backpack",
+          description: "Stylish backpack for daily use.",
+          price: "59.99",
+          category: "Accessories",
+          quantity: 25
+        },
+        {
+          id: 8,
+          image: "https://images.unsplash.com/photo-1521369909029-2afed882baee?w=400&h=400&fit=crop",
+          title: "Cap",
+          description: "Trendy cap for outdoor activities.",
+          price: "19.99",
+          category: "Accessories",
+          quantity: 12
+        }
+      ]
+      setProducts(defaultProducts)
     }
   }
 
@@ -245,7 +357,16 @@ export default function Cards({ addToCart, darkMode = false }) {
 
              {/* Products Count and Stock Stats */}
                <div className="products-count">
-          <p>Products Count: {filteredProducts.length}</p>
+          <div className="count-header">
+            <p>Products Count: {filteredProducts.length}</p>
+            <button 
+              className="refresh-btn"
+              onClick={refreshProducts}
+              title="Refresh Products"
+            >
+              🔄 Refresh
+            </button>
+          </div>
           <div className="stock-stats">
             <span className="stat-item in-stock">
               In Stock: {filteredProducts.filter(p => p.quantity > 5).length}
