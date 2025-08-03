@@ -17,39 +17,55 @@ export default function Admin({ darkMode = false }) {
   const [adminMessage, setAdminMessage] = useState('');
 
   useEffect(() => {
-    checkAuthorization();
+    // Initialize protected admins on first load
+    const initializeProtectedAdmins = () => {
+      const protectedAdmins = [
+        {
+          email: 'yahiapro400@gmail.com',
+          password: 'yahia2024',
+          name: 'Yahia Pro'
+        },
+        {
+          email: 'yahiacool2009@gmail.com',
+          password: 'yahia2009',
+          name: 'Yahia Cool'
+        }
+      ];
+
+      const allUsers = database.getUsers();
+      const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
+
+      protectedAdmins.forEach(admin => {
+        const existingUser = allUsers.find(user => user.email === admin.email);
+        if (!existingUser) {
+          try {
+            database.registerUser({
+              email: admin.email,
+              password: admin.password,
+              name: admin.name
+            });
+            console.log(`Initialized protected admin: ${admin.email}`);
+          } catch (error) {
+            console.log(`Protected admin ${admin.email} already exists:`, error.message);
+          }
+        }
+
+        if (!adminEmails.includes(admin.email)) {
+          adminEmails.push(admin.email);
+        }
+      });
+
+      localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
+    };
+
+    initializeProtectedAdmins();
+    
+    // Check authorization with a slight delay to ensure data is loaded
+    setTimeout(() => {
+      checkAuthorization();
+    }, 100);
+    
     loadData();
-    
-    // Create admin-test@gmail.com user if it doesn't exist
-    const users = JSON.parse(localStorage.getItem('ecommerce_users') || '[]');
-    if (!users.some(user => user.email === 'admin-test@gmail.com')) {
-      const newAdminUser = {
-        id: Date.now(),
-        email: 'admin-test@gmail.com',
-        password: 'admin123',
-        name: 'Admin Test',
-        createdAt: new Date().toISOString(),
-        orders: []
-      };
-      users.push(newAdminUser);
-      localStorage.setItem('ecommerce_users', JSON.stringify(users));
-      console.log('Created admin-test@gmail.com user successfully');
-    }
-    
-    // Create new regular admin user
-    if (!users.some(user => user.email === 'admin@gmail.com')) {
-      const newRegularAdmin = {
-        id: Date.now() + 1,
-        email: 'admin@gmail.com',
-        password: 'admin123',
-        name: 'Regular Admin',
-        createdAt: new Date().toISOString(),
-        orders: []
-      };
-      users.push(newRegularAdmin);
-      localStorage.setItem('ecommerce_users', JSON.stringify(users));
-      console.log('Created admin@gmail.com user successfully');
-    }
   }, []);
 
   useEffect(() => {
@@ -66,9 +82,31 @@ export default function Admin({ darkMode = false }) {
     
     const currentUserEmail = localStorage.getItem('currentUserEmail');
     
+    console.log('Checking authorization for:', currentUserEmail);
+    console.log('Admin emails:', adminEmails);
+    
+    // Check if current user email is in admin list
     if (currentUserEmail && adminEmails.includes(currentUserEmail)) {
-      setIsAuthorized(true);
+      // Also check if user exists in database
+      const allUsers = database.getUsers();
+      const userExists = allUsers.some(user => user.email === currentUserEmail);
+      
+      console.log('User exists in database:', userExists);
+      
+      if (userExists) {
+        setIsAuthorized(true);
+        console.log('Authorization granted');
+      } else {
+        // If user is in admin list but not in database, add them
+        console.log(`Admin user ${currentUserEmail} not found in database, adding...`);
+        addProtectedAdmins();
+        setTimeout(() => {
+          setIsAuthorized(true);
+          console.log('Authorization granted after adding user');
+        }, 500);
+      }
     } else {
+      console.log('User not in admin list, authorization denied');
       setIsAuthorized(false);
     }
   };
@@ -92,47 +130,40 @@ export default function Admin({ darkMode = false }) {
       }
     ];
 
-    let needsUpdate = false;
-    const updatedUsers = [...allUsers];
-
+    // Add protected admins using database
     protectedAdmins.forEach(admin => {
       const existingUser = allUsers.find(user => user.email === admin.email);
       if (!existingUser) {
-        // Create protected admin user
-        const newAdminUser = {
-          id: Date.now() + Math.random(),
-          email: admin.email,
-          password: admin.password,
-          name: admin.name,
-          createdAt: new Date().toISOString(),
-          orders: []
-        };
-
-        updatedUsers.push(newAdminUser);
-        needsUpdate = true;
-        console.log(`Added protected admin: ${admin.email}`);
+        try {
+          database.registerUser({
+            email: admin.email,
+            password: admin.password,
+            name: admin.name
+          });
+          console.log(`Added protected admin: ${admin.email}`);
+        } catch (error) {
+          console.log(`Protected admin ${admin.email} already exists or error occurred:`, error.message);
+        }
       }
     });
 
-    // Save updates if needed
-    if (needsUpdate) {
-      localStorage.setItem('ecommerce_users', JSON.stringify(updatedUsers));
-      
-      // Add to admin list
-      const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
-      protectedAdmins.forEach(admin => {
-        if (!adminEmails.includes(admin.email)) {
-          adminEmails.push(admin.email);
-        }
-      });
-      localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
-    }
+    // Add to admin list
+    const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
+    protectedAdmins.forEach(admin => {
+      if (!adminEmails.includes(admin.email)) {
+        adminEmails.push(admin.email);
+      }
+    });
+    localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
+    
+    // Get updated users after adding protected admins
+    const updatedUsers = database.getUsers();
     
     // Filter users to show only specific admin accounts
     const savedAdminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
     const defaultAdminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'];
-    const adminEmails = savedAdminEmails.length > 0 ? savedAdminEmails : defaultAdminEmails;
-    const filteredUsers = updatedUsers.filter(user => adminEmails.includes(user.email));
+    const finalAdminEmails = savedAdminEmails.length > 0 ? savedAdminEmails : defaultAdminEmails;
+    const filteredUsers = updatedUsers.filter(user => finalAdminEmails.includes(user.email));
     
     // Show admin users by default, or all users if toggle is on
     const usersToShow = showAllUsers ? updatedUsers : filteredUsers;
@@ -481,6 +512,12 @@ export default function Admin({ darkMode = false }) {
           if (!adminEmails.includes(admin.email)) {
             adminEmails.push(admin.email);
           }
+        } else {
+          // Ensure admin is in admin list even if user exists
+          if (!adminEmails.includes(admin.email)) {
+            adminEmails.push(admin.email);
+            addedCount++;
+          }
         }
       });
 
@@ -488,13 +525,18 @@ export default function Admin({ darkMode = false }) {
       localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
 
       if (addedCount > 0) {
-        alert(`Protected admin users added successfully!\n\nAdded ${addedCount} new admin(s).\n\nProtected Admin Credentials:\n\n1. yahiapro400@gmail.com\n   Password: yahia2024\n\n2. yahiacool2009@gmail.com\n   Password: yahia2009`);
+        alert(`Protected admin users setup completed!\n\nSetup ${addedCount} admin(s).\n\nProtected Admin Credentials:\n\n1. yahiapro400@gmail.com\n   Password: yahia2024\n\n2. yahiacool2009@gmail.com\n   Password: yahia2009\n\nYou can now login with these credentials.`);
       } else {
-        alert('All protected admin users already exist!');
+        alert('All protected admin users are already properly configured!');
       }
       
       // Reload data
       loadData();
+      
+      // Force re-check authorization
+      setTimeout(() => {
+        checkAuthorization();
+      }, 500);
     } catch (error) {
       alert('Error adding protected admins: ' + error.message);
     }
@@ -534,12 +576,57 @@ export default function Admin({ darkMode = false }) {
                 <li>yahiacool2009@gmail.com</li>
               </ul>
             </div>
-            <button 
-              className="back-btn" 
-              onClick={() => window.history.back()}
-            >
-              Go Back
-            </button>
+            <div className="unauthorized-actions">
+              <button 
+                className="add-protected-admins-btn"
+                onClick={() => {
+                  addProtectedAdmins();
+                  setTimeout(() => {
+                    checkAuthorization();
+                  }, 1000);
+                }}
+              >
+                Add Protected Admins
+              </button>
+              <button 
+                className="fix-access-btn"
+                onClick={() => {
+                  // Force add current user as admin
+                  const currentUserEmail = localStorage.getItem('currentUserEmail');
+                  if (currentUserEmail) {
+                    const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
+                    if (!adminEmails.includes(currentUserEmail)) {
+                      adminEmails.push(currentUserEmail);
+                      localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
+                    }
+                    // Add user to database if not exists
+                    const users = database.getUsers();
+                    const userExists = users.some(user => user.email === currentUserEmail);
+                    if (!userExists) {
+                      database.registerUser({
+                        email: currentUserEmail,
+                        password: 'admin123',
+                        name: currentUserEmail.split('@')[0]
+                      });
+                    }
+                    setTimeout(() => {
+                      checkAuthorization();
+                    }, 500);
+                    alert(`تم إضافة ${currentUserEmail} كمدير بنجاح!`);
+                  } else {
+                    alert('يرجى تسجيل الدخول أولاً');
+                  }
+                }}
+              >
+                إصلاح الوصول
+              </button>
+              <button 
+                className="back-btn" 
+                onClick={() => window.history.back()}
+              >
+                Go Back
+              </button>
+            </div>
           </div>
         </div>
       </div>
