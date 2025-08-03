@@ -1750,6 +1750,34 @@
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
 }
 
+/* Add Protected Admins Button Styles */
+.add-protected-admins-btn {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-right: 10px;
+}
+
+.dark-mode .add-protected-admins-btn {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  box-shadow: 0 4px 15px rgba(29, 78, 216, 0.3);
+}
+
+.add-protected-admins-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.dark-mode .add-protected-admins-btn:hover {
+  box-shadow: 0 6px 20px rgba(29, 78, 216, 0.5);
+}
+
 /* Add Specific Admin Button Styles */
 .add-specific-admin-btn {
   background: linear-gradient(135deg, #10b981, #059669);

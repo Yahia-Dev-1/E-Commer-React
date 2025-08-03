@@ -406,6 +406,66 @@ export default function Admin({ darkMode = false }) {
     }
   };
 
+  // Function to add protected admin users
+  const addProtectedAdmins = () => {
+    try {
+      const protectedAdmins = [
+        {
+          email: 'yahiapro400@gmail.com',
+          password: 'yahia2024',
+          name: 'Yahia Pro'
+        },
+        {
+          email: 'yahiacool2009@gmail.com',
+          password: 'yahia2009',
+          name: 'Yahia Cool'
+        }
+      ];
+
+      const users = JSON.parse(localStorage.getItem('ecommerce_users') || '[]');
+      const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
+      let addedCount = 0;
+
+      protectedAdmins.forEach(admin => {
+        // Check if user already exists
+        const existingUser = users.find(user => user.email === admin.email);
+        if (!existingUser) {
+          // Create admin user
+          const newAdminUser = {
+            id: Date.now() + Math.random(),
+            email: admin.email,
+            password: admin.password,
+            name: admin.name,
+            createdAt: new Date().toISOString(),
+            orders: []
+          };
+
+          users.push(newAdminUser);
+          addedCount++;
+
+          // Add to admin list
+          if (!adminEmails.includes(admin.email)) {
+            adminEmails.push(admin.email);
+          }
+        }
+      });
+
+      localStorage.setItem('ecommerce_users', JSON.stringify(users));
+      localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
+
+      if (addedCount > 0) {
+        alert(`Protected admin users added successfully!\n\nAdded ${addedCount} new admin(s).\n\nProtected Admin Credentials:\n\n1. yahiapro400@gmail.com\n   Password: yahia2024\n\n2. yahiacool2009@gmail.com\n   Password: yahia2009`);
+      } else {
+        alert('All protected admin users already exist!');
+      }
+      
+      // Reload data
+      loadData();
+    } catch (error) {
+      alert('Error adding protected admins: ' + error.message);
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -870,6 +930,9 @@ export default function Admin({ darkMode = false }) {
             <div className="section-header">
               <h2>Add New Admin</h2>
               <div className="header-actions">
+                <button className="add-protected-admins-btn" onClick={addProtectedAdmins}>
+                  Add Protected Admins
+                </button>
                 <button className="add-specific-admin-btn" onClick={addSpecificAdmin}>
                   Add Amr Admin
                 </button>
