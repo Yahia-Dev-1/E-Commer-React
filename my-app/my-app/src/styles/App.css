@@ -1,9 +1,119 @@
 body{
-    background-color: #58A0C8;
+    background-color: #1a1a2e;
     margin: 0;
     padding: 0;
+    transition: all 0.3s ease;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #e0e0e0;
+}
+
+.login-prompt {
+    background: rgba(26, 26, 46, 0.95);
+    color: #e0e0e0;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-prompt h2 {
+    color: #e0e0e0;
+}
+
+.login-prompt p {
+    color: rgba(224, 224, 224, 0.8);
 }
 
 .App {
     padding-top: 80px; /* مساحة للنافيجيشن الثابتة */
+}
+
+.login-prompt {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(26, 26, 46, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin: 20px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.login-prompt h2 {
+    color: #e0e0e0;
+    font-size: 28px;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.login-prompt p {
+    color: rgba(224, 224, 224, 0.8);
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+.login-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+/* Global Text Color Fixes */
+* {
+    transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+/* Text Colors - Always Dark */
+h1, h2, h3, h4, h5, h6 {
+    color: #e0e0e0;
+}
+
+p, span, div {
+    color: #e0e0e0;
+}
+
+/* Input Fields - Always Dark */
+input, textarea, select {
+    color: #e0e0e0;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Links - Always Dark */
+a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #8b9dc3;
+}
+
+/* Buttons - Always Dark */
+button {
+    color: #ffffff;
+}
+
+/* Cards and Containers - Always Dark */
+.card, .container, .section {
+    background-color: rgba(26, 26, 46, 0.95);
+    color: #e0e0e0;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
