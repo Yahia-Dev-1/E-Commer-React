@@ -1,21 +1,52 @@
 import './styles/App.css';
-import './styles/fixes.css';
 import Nav from './components/nav';
 import Cart from './components/cart';
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
-import About from './components/About'
-import Services from './components/Services'
-import AddProducts from './components/AddProducts'
-import Cards from './components/cards'
-import Login from './components/Login'
-import Orders from './components/Orders'
-import Modal from './components/Modal'
-import Admin from './components/Admin'
-import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { HelmetProvider } from 'react-helmet-async';
+import { useState, useEffect, Suspense, lazy } from 'react'
 import database from './utils/database'
+
+// Lazy load components for better performance
+const About = lazy(() => import('./components/About'))
+const Services = lazy(() => import('./components/Services'))
+const AddProducts = lazy(() => import('./components/AddProducts'))
+const Cards = lazy(() => import('./components/cards'))
+const Login = lazy(() => import('./components/Login'))
+const Orders = lazy(() => import('./components/Orders'))
+const Modal = lazy(() => import('./components/Modal'))
+const Admin = lazy(() => import('./components/Admin'))
+const Footer = lazy(() => import('./components/Footer'))
+
+// Loading component
+const LoadingSpinner = () => (
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '50vh',
+    background: '#1a1a2e'
+  }}>
+    <div style={{
+      textAlign: 'center',
+      color: '#e0e0e0'
+    }}>
+      <div style={{
+        width: '40px',
+        height: '40px',
+        border: '4px solid #f3f3f3',
+        borderTop: '4px solid #667eea',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+        margin: '0 auto 20px'
+      }}></div>
+      <p>Loading...</p>
+    </div>
+  </div>
+)
 
 function AppContent() {
   const navigate = useNavigate()
+  const location = useLocation();
   const [cartItems, setCartItems] = useState([])
   const [user, setUser] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -27,45 +58,56 @@ function AppContent() {
 
   // Check for saved user and cart data on component mount
   useEffect(() => {
-    // Create admin-test@gmail.com user if it doesn't exist
-    const users = database.getUsers();
-    if (!users.some(user => user.email === 'admin-test@gmail.com')) {
+    const initializeApp = async () => {
       try {
-        database.registerUser({
-          email: 'admin-test@gmail.com',
-          password: 'admin123',
-          name: 'Admin Test'
-        });
-        console.log('Created admin-test@gmail.com user in App.js');
+        // Create admin-test@gmail.com user if it doesn't exist
+        const users = database.getUsers();
+        if (!users.some(user => user.email === 'admin-test@gmail.com')) {
+          try {
+            database.registerUser({
+              email: 'admin-test@gmail.com',
+              password: 'admin123',
+              name: 'Admin Test'
+            });
+            console.log('Created admin-test@gmail.com user in App.js');
+          } catch (error) {
+            console.log('admin-test@gmail.com already exists:', error.message);
+          }
+        }
+
+        const savedUserEmail = localStorage.getItem('currentUserEmail')
+        const savedCartItems = localStorage.getItem('cartItems')
+        
+        if (savedUserEmail) {
+          const savedUser = database.getUsers().find(user => user.email === savedUserEmail)
+          if (savedUser) {
+            setUser(savedUser)
+          }
+        }
+        
+        if (savedCartItems) {
+          try {
+            const parsedCartItems = JSON.parse(savedCartItems)
+            setCartItems(parsedCartItems)
+          } catch (error) {
+            console.error('Error loading cart items:', error)
+            setCartItems([])
+          }
+        }
+
+        // Always use dark mode
+        setDarkMode(true)
+        
+        // Clean up localStorage to prevent quota issues
+        cleanupLocalStorage()
       } catch (error) {
-        console.log('admin-test@gmail.com already exists:', error.message);
+        console.error('Error initializing app:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
 
-    const savedUserEmail = localStorage.getItem('currentUserEmail')
-    const savedCartItems = localStorage.getItem('cartItems')
-    
-    if (savedUserEmail) {
-      const savedUser = database.getUsers().find(user => user.email === savedUserEmail)
-      if (savedUser) {
-        setUser(savedUser)
-      }
-    }
-    
-    if (savedCartItems) {
-      try {
-        const parsedCartItems = JSON.parse(savedCartItems)
-        setCartItems(parsedCartItems)
-      } catch (error) {
-        console.error('Error loading cart items:', error)
-        setCartItems([])
-      }
-    }
-
-    // Always use dark mode
-    setDarkMode(true)
-    
-    setIsLoading(false)
+    initializeApp()
   }, [])
 
   const addToCart = (product) => {
@@ -93,18 +135,54 @@ function AppContent() {
         return
       }
       
-      setCartItems(prevItems => prevItems.map(item => 
-        item.id === product.id 
-          ? { ...item, quantity: newQuantity }
-          : item
-      ))
+      setCartItems(prevItems => {
+        const updatedItems = prevItems.map(item => 
+          item.id === product.id 
+            ? { ...item, quantity: newQuantity }
+            : item
+        )
+        
+        // Save to localStorage immediately after updating state
+        try {
+          // Limit cart items to prevent memory issues
+          const limitedItems = updatedItems.slice(-20)
+          localStorage.setItem('cartItems', JSON.stringify(limitedItems))
+          return limitedItems
+        } catch (error) {
+          if (error.name === 'QuotaExceededError') {
+            console.warn('LocalStorage quota exceeded in addToCart, clearing old data...')
+            cleanupLocalStorage()
+            alert('Storage was full, some data was cleared. Please try adding the product again.')
+          }
+          return updatedItems
+        }
+      })
     } else {
-      setCartItems(prevItems => [...prevItems, { ...product, quantity: 1 }])
+      setCartItems(prevItems => {
+        const updatedItems = [...prevItems, { ...product, quantity: 1 }]
+        
+        // Save to localStorage immediately after updating state
+        try {
+          // Limit cart items to prevent memory issues
+          const limitedItems = updatedItems.slice(-20)
+          localStorage.setItem('cartItems', JSON.stringify(limitedItems))
+          return limitedItems
+        } catch (error) {
+          if (error.name === 'QuotaExceededError') {
+            console.warn('LocalStorage quota exceeded in addToCart, clearing old data...')
+            cleanupLocalStorage()
+            alert('Storage was full, some data was cleared. Please try adding the product again.')
+          }
+          return updatedItems
+        }
+      })
     }
     
     // Show modal asking if user wants to go to cart or continue shopping
     setShowAddToCartModal(true)
   }
+
+
 
   // دالة للتحقق من الكمية المتاحة
   const checkAvailableQuantity = (productId) => {
@@ -145,7 +223,24 @@ function AppContent() {
 
   const updateCartItemQuantity = (id, newQuantity) => {
     if (newQuantity <= 0) {
-      setCartItems(prevItems => prevItems.filter(item => item.id !== id))
+      setCartItems(prevItems => {
+        const updatedItems = prevItems.filter(item => item.id !== id)
+        
+        // Save to localStorage immediately
+        try {
+          // Limit cart items to prevent memory issues
+          const limitedItems = updatedItems.slice(-20)
+          localStorage.setItem('cartItems', JSON.stringify(limitedItems))
+          return limitedItems
+        } catch (error) {
+          if (error.name === 'QuotaExceededError') {
+            console.warn('LocalStorage quota exceeded, clearing old data...')
+            cleanupLocalStorage()
+            alert('Storage was full, some data was cleared. Please try again.')
+          }
+          return updatedItems
+        }
+      })
     } else {
       // التحقق من الكمية المتاحة
       const availableQuantity = checkAvailableQuantity(id)
@@ -156,27 +251,94 @@ function AppContent() {
         finalQuantity = availableQuantity
       }
       
-      setCartItems(prevItems => prevItems.map(item => 
-        item.id === id ? { ...item, quantity: finalQuantity } : item
-      ))
-      
-      // Save cart items to localStorage
-      const updatedCartItems = cartItems.map(item => 
-        item.id === id ? { ...item, quantity: finalQuantity } : item
-      ).filter(item => item.quantity > 0)
-      
-      localStorage.setItem('cartItems', JSON.stringify(updatedCartItems))
+      setCartItems(prevItems => {
+        const updatedItems = prevItems.map(item => 
+          item.id === id ? { ...item, quantity: finalQuantity } : item
+        )
+        
+        // Save to localStorage immediately
+        try {
+          // Limit cart items to prevent memory issues
+          const limitedItems = updatedItems.slice(-20)
+          localStorage.setItem('cartItems', JSON.stringify(limitedItems))
+          return limitedItems
+        } catch (error) {
+          if (error.name === 'QuotaExceededError') {
+            console.warn('LocalStorage quota exceeded, clearing old data...')
+            cleanupLocalStorage()
+            alert('Storage was full, some data was cleared. Please try again.')
+          }
+          return updatedItems
+        }
+      })
     }
   }
 
-  // Save cart items to localStorage whenever they change
+  // Save cart items to localStorage whenever they change (debounced)
   useEffect(() => {
-    if (cartItems.length > 0) {
-      localStorage.setItem('cartItems', JSON.stringify(cartItems))
-    } else {
-      localStorage.removeItem('cartItems')
-    }
+    const timeoutId = setTimeout(() => {
+      if (cartItems.length > 0) {
+        try {
+          // Limit cart items to prevent memory issues
+          const limitedItems = cartItems.slice(-20)
+          localStorage.setItem('cartItems', JSON.stringify(limitedItems))
+        } catch (error) {
+          if (error.name === 'QuotaExceededError') {
+            console.warn('LocalStorage quota exceeded in useEffect, clearing old data...')
+            try {
+              // Clear old data and retry with minimal data
+              localStorage.removeItem('cartItems')
+              localStorage.removeItem('ecommerce_products')
+              localStorage.removeItem('ecommerce_orders')
+              localStorage.removeItem('ecommerce_users')
+              
+              const minimalCartItems = cartItems.slice(-10).map(item => ({
+                id: item.id,
+                title: item.title,
+                price: item.price,
+                quantity: item.quantity
+              }))
+              
+              localStorage.setItem('cartItems', JSON.stringify(minimalCartItems))
+            } catch (retryError) {
+              console.error('Failed to save cart in useEffect:', retryError)
+            }
+          }
+        }
+      } else {
+        localStorage.removeItem('cartItems')
+      }
+    }, 500) // Increased debounce to 500ms
+
+    return () => clearTimeout(timeoutId)
   }, [cartItems])
+
+  // دالة لتنظيف اللوكل ستورج
+  const cleanupLocalStorage = () => {
+    try {
+      // حذف البيانات غير الضرورية
+      const keysToRemove = [
+        'react-devtools',
+        'react-devtools::Dock',
+        'react-devtools::Panel',
+        'react-devtools::Tab',
+        'react-devtools::Tab::DevTools',
+        'react-devtools::Tab::Components',
+        'react-devtools::Tab::Profiler',
+        'react-devtools::Tab::Settings'
+      ]
+      
+      keysToRemove.forEach(key => {
+        if (localStorage.getItem(key)) {
+          localStorage.removeItem(key)
+        }
+      })
+      
+      console.log('LocalStorage cleaned successfully')
+    } catch (error) {
+      console.error('Error cleaning localStorage:', error)
+    }
+  }
 
   const clearCart = () => {
     setCartItems([])
@@ -211,6 +373,7 @@ function AppContent() {
     updateProductQuantities(cartItems)
     
     setCartItems([])
+    localStorage.removeItem('cartItems')
   }
 
   // دالة جديدة لطرح الكمية المباعة من المنتجات
@@ -250,11 +413,11 @@ function AppContent() {
       
       console.log('Product quantities updated after purchase')
       
-      // إظهار رسالة للمنتجات التي نفدت مخزونها
-      if (outOfStockProducts.length > 0) {
-        const message = `تم إغلاق المنتجات التالية لانتهاء مخزونها:\n${outOfStockProducts.join('\n')}\n\nسيتم إعادة فتحها عند إضافة كمية جديدة من Admin.`
-        alert(message)
-      }
+      // إظهار رسالة للمنتجات التي نفدت مخزونها (تم إزالتها)
+      // if (outOfStockProducts.length > 0) {
+      //   const message = `تم إغلاق المنتجات التالية لانتهاء مخزونها:\n${outOfStockProducts.join('\n')}\n\nسيتم إعادة فتحها عند إضافة كمية جديدة من Admin.`
+      //   alert(message)
+      // }
       
     } catch (error) {
       console.error('Error updating product quantities:', error)
@@ -271,13 +434,43 @@ function AppContent() {
       const existingItem = cartItems.find(item => item.id === pendingProduct.id)
       
       if (existingItem) {
-        setCartItems(prevItems => prevItems.map(item => 
-          item.id === pendingProduct.id 
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        ))
+        setCartItems(prevItems => {
+          const updatedItems = prevItems.map(item => 
+            item.id === pendingProduct.id 
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          )
+          
+          // Save to localStorage immediately
+          try {
+            localStorage.setItem('cartItems', JSON.stringify(updatedItems))
+          } catch (error) {
+            if (error.name === 'QuotaExceededError') {
+              console.warn('LocalStorage quota exceeded in handleLogin, clearing old data...')
+              cleanupLocalStorage()
+              alert('Storage was full, some data was cleared. Please try again.')
+            }
+          }
+          
+          return updatedItems
+        })
       } else {
-        setCartItems(prevItems => [...prevItems, { ...pendingProduct, quantity: 1 }])
+        setCartItems(prevItems => {
+          const updatedItems = [...prevItems, { ...pendingProduct, quantity: 1 }]
+          
+          // Save to localStorage immediately
+          try {
+            localStorage.setItem('cartItems', JSON.stringify(updatedItems))
+          } catch (error) {
+            if (error.name === 'QuotaExceededError') {
+              console.warn('LocalStorage quota exceeded in handleLogin, clearing old data...')
+              cleanupLocalStorage()
+              alert('Storage was full, some data was cleared. Please try again.')
+            }
+          }
+          
+          return updatedItems
+        })
       }
       
       // Then show the modal
@@ -331,52 +524,40 @@ function AppContent() {
 
   // Show loading screen while checking saved user
   if (isLoading) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        background: '#1a1a2e'
-      }}>
-        <div style={{
-          textAlign: 'center',
-          color: '#e0e0e0'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #667eea',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 20px'
-          }}></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   return (
     <div className="dark-mode">
-      <Nav cartItemsCount={cartCount} user={user} onLogout={handleLogout} darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+      <Nav cartItemsCount={cartCount} user={user} onLogout={handleLogout} darkMode={true} toggleDarkMode={undefined} />
       <Routes>
         <Route path='/' element={
-          <Cards addToCart={addToCart} darkMode={darkMode} />
+          <Suspense fallback={<LoadingSpinner />}>
+            <Cards addToCart={addToCart} darkMode={true} />
+          </Suspense>
         } />
-        <Route path='/about' element={<About darkMode={darkMode} />} />
+        <Route path='/about' element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <About darkMode={true} />
+          </Suspense>
+        } />
 
-        <Route path='/services' element={<Services darkMode={darkMode} />} />
+        <Route path='/services' element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <Services darkMode={true} />
+          </Suspense>
+        } />
         <Route path='/cart' element={
           user ? (
-            <Cart 
-              cartItems={cartItems} 
-              updateQuantity={updateCartItemQuantity}
-              clearCart={clearCart}
-              createOrder={createOrder}
-              darkMode={darkMode}
-            />
+            <Suspense fallback={<LoadingSpinner />}>
+              <Cart 
+                cartItems={cartItems} 
+                updateQuantity={updateCartItemQuantity}
+                clearCart={clearCart}
+                createOrder={createOrder}
+                darkMode={true}
+              />
+            </Suspense>
           ) : (
             <div className="login-prompt">
               <h2>Login Required</h2>
@@ -387,10 +568,16 @@ function AppContent() {
             </div>
           )
         } />
-        <Route path='/login' element={<Login onLogin={handleLogin} darkMode={darkMode} />} />
+        <Route path='/login' element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <Login onLogin={handleLogin} darkMode={true} />
+          </Suspense>
+        } />
         <Route path='/orders' element={
           user ? (
-            <Orders user={user} orders={orders} darkMode={darkMode} />
+            <Suspense fallback={<LoadingSpinner />}>
+              <Orders user={user} orders={orders} darkMode={true} />
+            </Suspense>
           ) : (
             <div className="login-prompt">
               <h2>Login Required</h2>
@@ -401,19 +588,36 @@ function AppContent() {
             </div>
           )
         } />
-        <Route path='/admin' element={<Admin darkMode={darkMode} />} />
-        <Route path='/add-products' element={<AddProducts darkMode={darkMode} />} />
+        <Route path='/admin' element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <Admin darkMode={true} />
+          </Suspense>
+        } />
+        <Route path='/add-products' element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <AddProducts darkMode={true} />
+          </Suspense>
+        } />
       </Routes>
-      
-              <Modal
+      {/* إظهار الفوتر في كل الصفحات ما عدا صفحة اللوجين و My Orders والأدمن والسلة */}
+      {location.pathname !== '/login' && 
+       location.pathname !== '/orders' && 
+       location.pathname !== '/admin' && 
+       location.pathname !== '/add-products' && 
+       location.pathname !== '/cart' && 
+        <Suspense fallback={<LoadingSpinner />}>
+          <Footer darkMode={true} />
+        </Suspense>
+      }
+      <Suspense fallback={<LoadingSpinner />}>
+        <Modal
           isOpen={showModal}
           onClose={handleModalClose}
           title="Login Required"
           message="You need to login to add items to your cart. Would you like to go to the login page?"
           onConfirm={handleModalConfirm}
         />
-      
-              <Modal
+        <Modal
           isOpen={showAddToCartModal}
           onClose={handleAddToCartModalClose}
           title="Product Added"
@@ -421,15 +625,18 @@ function AppContent() {
           onAddToCart={handleAddToCartAfterLogin}
           showAddToCart={true}
         />
+      </Suspense>
     </div>
   );
 }
 
 function App() {
   return (
-    <BrowserRouter basename="/E-Commer-React">
-      <AppContent />
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter basename="/E-Commer-React">
+        <AppContent />
+      </BrowserRouter>
+    </HelmetProvider>
   );
 }
 

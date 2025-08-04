@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Admin.css';
 import database from '../utils/database';
 
-export default function Admin({ darkMode = false }) {
+export default function Admin({ darkMode = true }) {
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState('users');
@@ -10,14 +10,16 @@ export default function Admin({ darkMode = false }) {
   const [showAllUsers, setShowAllUsers] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  // const [currentUser, setCurrentUser] = useState(null);
-  const [newAdminEmail, setNewAdminEmail] = useState('');
-  const [newAdminPassword, setNewAdminPassword] = useState('');
-  const [newAdminName, setNewAdminName] = useState('');
-  const [adminMessage, setAdminMessage] = useState('');
+  const [showAddAdminForm, setShowAddAdminForm] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({
+    email: '',
+    password: '',
+    name: ''
+  });
+  const [addAdminError, setAddAdminError] = useState('');
+  const [quickAdminEmail, setQuickAdminEmail] = useState('');
 
   useEffect(() => {
-    // Initialize protected admins on first load
     const initializeProtectedAdmins = () => {
       const protectedAdmins = [
         {
@@ -60,7 +62,6 @@ export default function Admin({ darkMode = false }) {
 
     initializeProtectedAdmins();
     
-    // Check authorization with a slight delay to ensure data is loaded
     setTimeout(() => {
       checkAuthorization();
     }, 100);
@@ -75,30 +76,20 @@ export default function Admin({ darkMode = false }) {
   }, [showAllUsers, isAuthorized]);
 
   const checkAuthorization = () => {
-    // Get admin emails from localStorage or use default list
     const savedAdminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
     const defaultAdminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'];
     const adminEmails = savedAdminEmails.length > 0 ? savedAdminEmails : defaultAdminEmails;
     
     const currentUserEmail = localStorage.getItem('currentUserEmail');
     
-    console.log('Checking authorization for:', currentUserEmail);
-    console.log('Admin emails:', adminEmails);
-    
-    // Check if current user email is in admin list
     if (currentUserEmail && adminEmails.includes(currentUserEmail)) {
-      // Also check if user exists in database
       const allUsers = database.getUsers();
       const userExists = allUsers.some(user => user.email === currentUserEmail);
-      
-      console.log('User exists in database:', userExists);
       
       if (userExists) {
         setIsAuthorized(true);
         console.log('Authorization granted');
       } else {
-        // If user is in admin list but not in database, add them
-        console.log(`Admin user ${currentUserEmail} not found in database, adding...`);
         addProtectedAdmins();
         setTimeout(() => {
           setIsAuthorized(true);
@@ -116,7 +107,6 @@ export default function Admin({ darkMode = false }) {
     const allUsers = database.getUsers();
     const allOrders = database.getOrders();
     
-    // Add protected admins if they don't exist
     const protectedAdmins = [
       {
         email: 'yahiapro400@gmail.com',
@@ -130,7 +120,6 @@ export default function Admin({ darkMode = false }) {
       }
     ];
 
-    // Add protected admins using database
     protectedAdmins.forEach(admin => {
       const existingUser = allUsers.find(user => user.email === admin.email);
       if (!existingUser) {
@@ -147,7 +136,6 @@ export default function Admin({ darkMode = false }) {
       }
     });
 
-    // Add to admin list
     const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
     protectedAdmins.forEach(admin => {
       if (!adminEmails.includes(admin.email)) {
@@ -156,16 +144,13 @@ export default function Admin({ darkMode = false }) {
     });
     localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
     
-    // Get updated users after adding protected admins
     const updatedUsers = database.getUsers();
     
-    // Filter users to show only specific admin accounts
     const savedAdminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
     const defaultAdminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'];
     const finalAdminEmails = savedAdminEmails.length > 0 ? savedAdminEmails : defaultAdminEmails;
     const filteredUsers = updatedUsers.filter(user => finalAdminEmails.includes(user.email));
     
-    // Show admin users by default, or all users if toggle is on
     const usersToShow = showAllUsers ? updatedUsers : filteredUsers;
     
     setUsers(usersToShow);
@@ -182,7 +167,6 @@ export default function Admin({ darkMode = false }) {
       return;
     }
 
-    // Check if trying to delete a protected admin
     const protectedAdmins = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'];
     const currentUserEmail = localStorage.getItem('currentUserEmail');
     
@@ -191,9 +175,7 @@ export default function Admin({ darkMode = false }) {
       return;
     }
 
-    // Check if current user is authorized to delete admins
     const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
-    const isCurrentUserAdmin = adminEmails.includes(currentUserEmail);
     
     if (adminEmails.includes(userToDelete.email) && !protectedAdmins.includes(currentUserEmail)) {
       alert('❌ Only protected admins can delete other admin accounts!\n\nContact yahiapro400@gmail.com or yahiacool2009@gmail.com to delete admin accounts.');
@@ -201,277 +183,140 @@ export default function Admin({ darkMode = false }) {
     }
 
     if (window.confirm(`Are you sure you want to delete user: ${userToDelete.email}?`)) {
-      const updatedUsers = users.filter(user => user.id !== userId);
-      setUsers(updatedUsers);
-      localStorage.setItem('ecommerce_users', JSON.stringify(updatedUsers));
-      
-      // Remove from admin list if it's an admin
-      if (adminEmails.includes(userToDelete.email)) {
-        const updatedAdminEmails = adminEmails.filter(email => email !== userToDelete.email);
-        localStorage.setItem('admin_emails', JSON.stringify(updatedAdminEmails));
+      const success = database.deleteUser(userId);
+      if (success) {
+        alert(`✅ User ${userToDelete.email} has been deleted successfully!`);
+        loadData();
+      } else {
+        alert('❌ Failed to delete user. Please try again.');
       }
-      
-      alert(`✅ User ${userToDelete.email} has been deleted successfully!`);
-      loadData();
     }
   };
 
   const rejectOrder = (orderId) => {
-    if (window.confirm('Are you sure you want to reject this order?')) {
-      const order = orders.find(o => o.id === orderId);
-      const updatedOrders = orders.map(order => 
-        order.id === orderId ? { ...order, status: 'rejected' } : order
-      );
-      localStorage.setItem('ecommerce_orders', JSON.stringify(updatedOrders));
-      
-      // Restore product quantities when order is rejected
-      restoreProductQuantities(order);
-      
-      // Send notification to user
-      addRejectionNotification(order);
-      
-      loadData();
-    }
+    const orderToReject = orders.find(order => order.id === orderId);
+    if (!orderToReject) return;
+
+    const updatedOrders = orders.map(order =>
+      order.id === orderId ? { ...order, status: 'rejected' } : order
+    );
+    setOrders(updatedOrders);
+    localStorage.setItem('ecommerce_orders', JSON.stringify(updatedOrders));
+    
+    addRejectionNotification(orderToReject);
+    alert(`Order #${orderToReject.orderNumber} has been rejected.`);
   };
 
   const approveOrder = (orderId) => {
-    if (window.confirm('Are you sure you want to approve this order?')) {
-      const updatedOrders = orders.map(order => 
-        order.id === orderId ? { ...order, status: 'approved' } : order
-      );
-      localStorage.setItem('ecommerce_orders', JSON.stringify(updatedOrders));
-      loadData();
-    }
+    const updatedOrders = orders.map(order =>
+      order.id === orderId ? { ...order, status: 'approved' } : order
+    );
+    setOrders(updatedOrders);
+    localStorage.setItem('ecommerce_orders', JSON.stringify(updatedOrders));
+    alert('Order has been approved.');
   };
 
   const deleteOrder = (orderId) => {
-    if (window.confirm('Are you sure you want to delete this order? This action cannot be undone!')) {
-      const order = orders.find(o => o.id === orderId);
+    const orderToDelete = orders.find(order => order.id === orderId);
+    if (!orderToDelete) return;
+
+    if (window.confirm(`Are you sure you want to delete order #${orderToDelete.orderNumber}?`)) {
       const updatedOrders = orders.filter(order => order.id !== orderId);
+      setOrders(updatedOrders);
       localStorage.setItem('ecommerce_orders', JSON.stringify(updatedOrders));
       
-      // Restore product quantities when order is deleted
-      restoreProductQuantities(order);
-      
-      // Send deletion notification to user
-      addDeletionNotification(order);
-      
-      loadData();
+      addDeletionNotification(orderToDelete);
+      restoreProductQuantities(orderToDelete);
+      alert(`Order #${orderToDelete.orderNumber} has been deleted.`);
     }
   };
 
   const addRejectionNotification = (order) => {
-    // Store rejection notification in localStorage
     const notifications = JSON.parse(localStorage.getItem('order_notifications') || '[]');
     const notification = {
       id: Date.now(),
       type: 'rejection',
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      userEmail: order.userEmail,
-      message: `Your order #${order.orderNumber} has been rejected. Please contact us for more information.`,
+      message: `Your order #${order.orderNumber} has been rejected.`,
       date: new Date().toISOString(),
+      userEmail: order.userEmail,
       read: false
     };
     notifications.push(notification);
     localStorage.setItem('order_notifications', JSON.stringify(notifications));
-    
-    console.log('Rejection notification added for:', order.userEmail);
-    console.log('Notification:', notification);
   };
 
   const addDeletionNotification = (order) => {
-    // Store deletion notification in localStorage
     const notifications = JSON.parse(localStorage.getItem('order_notifications') || '[]');
     const notification = {
       id: Date.now(),
       type: 'deletion',
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      userEmail: order.userEmail,
-      message: `Your order #${order.orderNumber} has been deleted. If you have any questions, please contact our support team.`,
+      message: `Your order #${order.orderNumber} has been deleted.`,
       date: new Date().toISOString(),
+      userEmail: order.userEmail,
       read: false
     };
     notifications.push(notification);
     localStorage.setItem('order_notifications', JSON.stringify(notifications));
-    
-    console.log('Deletion notification added for:', order.userEmail);
-    console.log('Notification:', notification);
   };
 
-  // Function to restore product quantities when order is rejected or deleted
   const restoreProductQuantities = (order) => {
     try {
-      // Get current products from localStorage
-      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
+      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]');
       
-      // Update quantities for each product in the order
-      const updatedProducts = existingProducts.map(product => {
-        const orderItem = order.items.find(item => item.id === product.id)
-        if (orderItem) {
-          // Add sold quantity back to product
-          const newQuantity = (product.quantity || 0) + orderItem.quantity
-          return {
-            ...product,
-            quantity: newQuantity
-          }
+      order.items.forEach(item => {
+        const productIndex = existingProducts.findIndex(p => p.id === item.id);
+        if (productIndex !== -1) {
+          existingProducts[productIndex].quantity += item.quantity;
         }
-        return product
-      })
+      });
       
-      // Save updated products
-      localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
-      
-      console.log('Product quantities restored after order rejection/deletion')
-      console.log('Order items restored:', order.items)
+      localStorage.setItem('ecommerce_products', JSON.stringify(existingProducts));
+      console.log('Product quantities restored after order deletion');
     } catch (error) {
-      console.error('Error restoring product quantities:', error)
+      console.error('Error restoring product quantities:', error);
     }
-  }
-
-
-
-  // Function to add local notifications when product is deleted
-  const addProductDeletionNotification = (product) => {
-    // Get all users to notify them about product deletion
-    const users = JSON.parse(localStorage.getItem('ecommerce_users') || '[]');
-    
-    if (users.length === 0) {
-      alert('❌ No users found to notify.');
-      return;
-    }
-    
-    // Add local notification for all users
-    const notifications = JSON.parse(localStorage.getItem('ecommerce_notifications') || '[]');
-    
-    users.forEach(user => {
-      const notification = {
-        id: Date.now() + Math.random(),
-        userId: user.id,
-        title: 'Product Deleted',
-        message: `The product "${product.title}" has been removed from our store.`,
-        timestamp: new Date().toISOString(),
-        read: false
-      };
-      notifications.push(notification);
-    });
-    
-    localStorage.setItem('ecommerce_notifications', JSON.stringify(notifications));
-    
-    alert(`✅ Product "${product.title}" has been deleted successfully!\n\n📋 Local notifications have been added for ${users.length} users.`);
   };
-
-
 
   const clearDatabase = () => {
     if (window.confirm('Are you sure you want to clear all data? This action cannot be undone!')) {
       database.clearDatabase();
       setUsers([]);
       setOrders([]);
-      setLastSaveTime(null);
+      alert('All data has been cleared.');
     }
   };
 
-
-
-  const addNewAdmin = () => {
-    if (!newAdminEmail || !newAdminPassword || !newAdminName) {
-      setAdminMessage('Please fill in all fields');
-      return;
-    }
-
-    if (newAdminPassword.length < 6) {
-      setAdminMessage('Password must be at least 6 characters');
-      return;
-    }
-
-    try {
-      // Create new admin user
-      const newAdminUser = {
-        id: Date.now(),
-        email: newAdminEmail,
-        password: newAdminPassword,
-        name: newAdminName,
-        createdAt: new Date().toISOString(),
-        orders: []
-      };
-
-      // Add to localStorage
-      const users = JSON.parse(localStorage.getItem('ecommerce_users') || '[]');
-      users.push(newAdminUser);
-      localStorage.setItem('ecommerce_users', JSON.stringify(users));
-
-      // Add to admin list
-      const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
-      if (!adminEmails.includes(newAdminEmail)) {
-        adminEmails.push(newAdminEmail);
-        localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
-      }
-
-      setAdminMessage('Admin added successfully!');
-      setNewAdminEmail('');
-      setNewAdminPassword('');
-      setNewAdminName('');
-      
-      // Reload data
-      loadData();
-      
-      setTimeout(() => {
-        setAdminMessage('');
-      }, 3000);
-    } catch (error) {
-      setAdminMessage('Error adding admin: ' + error.message);
-    }
-  };
-
-  // Function to add the specific admin user
   const addSpecificAdmin = () => {
     try {
-      const adminEmail = 'amrkhaled10sa@gmail.com';
-      const adminPassword = 'amr2009';
-      const adminName = 'Amr Khaled';
-
-      // Create admin user
-      const newAdminUser = {
-        id: Date.now(),
-        email: adminEmail,
-        password: adminPassword,
-        name: adminName,
-        createdAt: new Date().toISOString(),
-        orders: []
-      };
-
-      // Add to localStorage
-      const users = JSON.parse(localStorage.getItem('ecommerce_users') || '[]');
-      
-      // Check if user already exists
-      const existingUser = users.find(user => user.email === adminEmail);
-      if (existingUser) {
-        alert('Admin user already exists!');
-        return;
-      }
-      
-      users.push(newAdminUser);
-      localStorage.setItem('ecommerce_users', JSON.stringify(users));
-
-      // Add to admin list
-      const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
-      if (!adminEmails.includes(adminEmail)) {
-        adminEmails.push(adminEmail);
+      const currentUserEmail = localStorage.getItem('currentUserEmail');
+      if (currentUserEmail) {
+        const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
+        if (!adminEmails.includes(currentUserEmail)) {
+          adminEmails.push(currentUserEmail);
+        }
         localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
-      }
 
-      alert('Admin user added successfully!\n\nEmail: amrkhaled10sa@gmail.com\nPassword: amr2009');
-      
-      // Reload data
-      loadData();
+        const users = database.getUsers();
+        const userExists = users.some(user => user.email === currentUserEmail);
+        if (!userExists) {
+          database.registerUser({
+            email: currentUserEmail,
+            password: 'admin123',
+            name: currentUserEmail.split('@')[0]
+          });
+        }
+        setTimeout(() => {
+          checkAuthorization();
+        }, 500);
+        alert(`تم إضافة ${currentUserEmail} كمدير بنجاح!`);
+      } else {
+        alert('يرجى تسجيل الدخول أولاً');
+      }
     } catch (error) {
       alert('Error adding admin: ' + error.message);
     }
   };
 
-  // Function to add protected admin users
   const addProtectedAdmins = () => {
     try {
       const protectedAdmins = [
@@ -492,10 +337,8 @@ export default function Admin({ darkMode = false }) {
       let addedCount = 0;
 
       protectedAdmins.forEach(admin => {
-        // Check if user already exists
         const existingUser = users.find(user => user.email === admin.email);
         if (!existingUser) {
-          // Create admin user
           const newAdminUser = {
             id: Date.now() + Math.random(),
             email: admin.email,
@@ -508,12 +351,10 @@ export default function Admin({ darkMode = false }) {
           users.push(newAdminUser);
           addedCount++;
 
-          // Add to admin list
           if (!adminEmails.includes(admin.email)) {
             adminEmails.push(admin.email);
           }
         } else {
-          // Ensure admin is in admin list even if user exists
           if (!adminEmails.includes(admin.email)) {
             adminEmails.push(admin.email);
             addedCount++;
@@ -525,27 +366,78 @@ export default function Admin({ darkMode = false }) {
       localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
 
       if (addedCount > 0) {
-        alert(`Protected admin users setup completed!\n\nSetup ${addedCount} admin(s).\n\nProtected Admin Credentials:\n\n1. yahiapro400@gmail.com\n   Password: yahia2024\n\n2. yahiacool2009@gmail.com\n   Password: yahia2009\n\nYou can now login with these credentials.`);
+        alert(`✅ Added ${addedCount} protected admin(s) successfully!`);
       } else {
-        alert('All protected admin users are already properly configured!');
+        alert('ℹ️ Protected admins already exist.');
       }
-      
-      // Reload data
-      loadData();
-      
-      // Force re-check authorization
-      setTimeout(() => {
-        checkAuthorization();
-      }, 500);
     } catch (error) {
       alert('Error adding protected admins: ' + error.message);
+    }
+  };
+
+  const addQuickAdmin = () => {
+    if (!quickAdminEmail || !quickAdminEmail.trim()) {
+      alert('يرجى إدخال إيميل المدير');
+      return;
+    }
+
+    const email = quickAdminEmail.trim();
+    const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
+    const defaultAdminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'];
+    const allAdminEmails = adminEmails.length > 0 ? adminEmails : defaultAdminEmails;
+    
+    // Check if email already exists
+    if (allAdminEmails.includes(email)) {
+      alert('هذا الإيميل مدير بالفعل!');
+      return;
+    }
+    
+    // Add to admin list
+    allAdminEmails.push(email);
+    localStorage.setItem('admin_emails', JSON.stringify(allAdminEmails));
+    
+    // Create user if doesn't exist
+    const allUsers = database.getUsers();
+    const userExists = allUsers.some(user => user.email === email);
+    
+    if (!userExists) {
+      try {
+        database.registerUser({
+          email: email,
+          password: 'admin123',
+          name: email.split('@')[0]
+        });
+        console.log(`Created new admin user: ${email}`);
+      } catch (error) {
+        console.log(`User ${email} already exists:`, error.message);
+      }
+    }
+    
+    alert(`تم إضافة ${email} كمدير بنجاح!`);
+    setQuickAdminEmail('');
+    loadData();
+  };
+
+  const fixLoginIssues = () => {
+    if (window.confirm('🔧 Fix login issues?\n\nThis will:\n• Reset protected admin accounts\n• Ensure correct passwords\n• Fix any corrupted data\n\nContinue?')) {
+      try {
+        const success = database.resetProtectedAdmins();
+        if (success) {
+          alert('✅ Login issues fixed successfully!\n\nYou can now login with:\n• yahiapro400@gmail.com / yahia2024\n• yahiacool2009@gmail.com / yahia2009');
+          loadData();
+        } else {
+          alert('❌ Failed to fix login issues. Please try again.');
+        }
+      } catch (error) {
+        alert('❌ Error fixing login issues: ' + error.message);
+      }
     }
   };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -589,9 +481,14 @@ export default function Admin({ darkMode = false }) {
                 Add Protected Admins
               </button>
               <button 
+                className="fix-login-btn"
+                onClick={fixLoginIssues}
+              >
+                🔧 Fix Login Issues
+              </button>
+              <button 
                 className="fix-access-btn"
                 onClick={() => {
-                  // Force add current user as admin
                   const currentUserEmail = localStorage.getItem('currentUserEmail');
                   if (currentUserEmail) {
                     const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
@@ -599,7 +496,6 @@ export default function Admin({ darkMode = false }) {
                       adminEmails.push(currentUserEmail);
                       localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
                     }
-                    // Add user to database if not exists
                     const users = database.getUsers();
                     const userExists = users.some(user => user.email === currentUserEmail);
                     if (!userExists) {
@@ -646,33 +542,26 @@ export default function Admin({ darkMode = false }) {
 
   return (
     <div className={`admin-container ${darkMode ? 'dark-mode' : ''}`}>
-             <div className="admin-header">
-         <h1>Admin Dashboard</h1>
-                 <div className="admin-stats">
-           <div className="stat-card">
-             <h3>Admin Users</h3>
-             <p>{users.length}</p>
-           </div>
-           <div className="stat-card">
-             <h3>Orders</h3>
-             <p>{orders.length}</p>
-           </div>
-           <div className="stat-card">
-             <h3>Total Sales</h3>
-             <p>${orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}</p>
-           </div>
-           <div className="stat-card">
-             <h3>Products</h3>
-             <p>{(() => {
-               const products = JSON.parse(localStorage.getItem('ecommerce_products') || '[]');
-               return products.length;
-             })()}</p>
-           </div>
-           <div className="stat-card">
-             <h3>Last Save</h3>
-             <p>{lastSaveTime ? formatShortDate(lastSaveTime) : 'Never'}</p>
-           </div>
-         </div>
+      <div className="admin-header">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome back, Admin! Manage your e-commerce platform.</p>
+        <div className="admin-stats">
+          <div className="stat-card">
+            <span className="stat-icon">👤</span>
+            <h3>{users.length}</h3>
+            <p>Total Users</p>
+          </div>
+          <div className="stat-card">
+            <span className="stat-icon">🛒</span>
+            <h3>{orders.length}</h3>
+            <p>Total Orders</p>
+          </div>
+          <div className="stat-card">
+            <span className="stat-icon">🛡️</span>
+            <h3>{users.filter(u => ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'].includes(u.email)).length}</h3>
+            <p>Protected Admins</p>
+          </div>
+        </div>
       </div>
 
       <div className="admin-tabs">
@@ -680,25 +569,13 @@ export default function Admin({ darkMode = false }) {
           className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
-          Admin Users ({users.length})
+          Users Management
         </button>
         <button 
           className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
           onClick={() => setActiveTab('orders')}
         >
-          Orders ({orders.length})
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'products' ? 'active' : ''}`}
-          onClick={() => setActiveTab('products')}
-        >
-          Products
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
-          onClick={() => setActiveTab('stats')}
-        >
-          Statistics
+          Orders Management
         </button>
         <button 
           className={`tab-btn ${activeTab === 'manage-admins' ? 'active' : ''}`}
@@ -706,7 +583,21 @@ export default function Admin({ darkMode = false }) {
         >
           Manage Admins
         </button>
+        <button 
+          className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+          onClick={() => setActiveTab('stats')}
+        >
+          📊 Advanced Stats
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('analytics')}
+        >
+          📈 Analytics
+        </button>
       </div>
+
+
 
       <div className="admin-content">
         {activeTab === 'users' && (
@@ -732,24 +623,35 @@ export default function Admin({ darkMode = false }) {
               </div>
             ) : (
               <div className="users-list">
-                {users.map((user) => (
-                  <div key={user.id} className="user-card">
-                    <div className="user-info">
-                      <h3>{user.name}</h3>
-                      <p className="user-email">{user.email}</p>
-                      <p className="user-date">Registration Date: {formatDate(user.createdAt)}</p>
-                      <p className="user-orders">Number of Orders: {user.orders?.length || 0}</p>
+                {users.map((user) => {
+                  const isProtected = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'].includes(user.email);
+                  return (
+                    <div key={user.id} className={`user-card ${isProtected ? 'protected' : ''}`}>
+                      <div className="user-info">
+                        <h3>
+                          {user.name}
+                          {isProtected && <span className="protected-badge">🛡️ Protected</span>}
+                        </h3>
+                        <p className="user-email">{user.email}</p>
+                        <p className="user-date">Registration Date: {formatDate(user.createdAt)}</p>
+                        <p className="user-orders">Number of Orders: {user.orders?.length || 0}</p>
+                      </div>
+                      <div className="user-actions">
+                        {!isProtected && (
+                          <button 
+                            className="delete-btn"
+                            onClick={() => deleteUser(user.id)}
+                          >
+                            Delete
+                          </button>
+                        )}
+                        {isProtected && (
+                          <span className="protected-message">Protected Admin - Cannot Delete</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="user-actions">
-                                              <button 
-                          className="delete-btn"
-                          onClick={() => deleteUser(user.id)}
-                        >
-                          Delete
-                        </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -758,7 +660,7 @@ export default function Admin({ darkMode = false }) {
         {activeTab === 'orders' && (
           <div className="orders-section">
             <div className="section-header">
-              <h2>Orders List</h2>
+              <h2>Orders Management</h2>
               <button className="refresh-btn" onClick={loadData}>
                 Refresh Data
               </button>
@@ -772,27 +674,27 @@ export default function Admin({ darkMode = false }) {
               <div className="orders-list">
                 {orders.map((order) => (
                   <div key={order.id} className="order-card">
-                                         <div className="order-info">
-                       <h3>Order #{order.orderNumber}</h3>
-                       <p className="order-email font-weight-bold text-black">{order.userEmail}</p>
-                       <p className="order-date font-weight-bold text-black ">Order Date: {formatDate(order.date)}</p>
-                       <p className="order-status font-weight-bold text-black ">Status: {order.status}</p>
-                       <p className="order-total font-weight-bold text-black ">Total: ${order.total.toFixed(2)}</p>
-                       <p className="order-items font-weight-bold text-black ">Number of Items: {order.items.length}</p>
-                       {order.shipping && Object.keys(order.shipping).length > 0 && (
-                         <div className="shipping-info">
-                           <h4>Shipping Details:</h4>
-                           <p><strong>Name:</strong> {order.shipping.fullName}</p>
-                           <p><strong>Phone:</strong> {order.shipping.phone}</p>
-                           <p><strong>Address:</strong> {order.shipping.street}, {order.shipping.building}</p>
-                           <p><strong>Address Inside Country:</strong> {order.shipping.addressInCountry}</p>
-                           <p><strong>City:</strong> {order.shipping.city}, {order.shipping.governorate}</p>
-                           {order.shipping.additionalInfo && (
-                             <p><strong>Notes:</strong> {order.shipping.additionalInfo}</p>
-                           )}
-                         </div>
-                       )}
-                     </div>
+                    <div className="order-info">
+                      <h3>Order #{order.orderNumber}</h3>
+                      <p className="order-email font-weight-bold">{order.userEmail}</p>
+                      <p className="order-date font-weight-bold">Order Date: {formatDate(order.date)}</p>
+                      <p className="order-status font-weight-bold">Status: {order.status}</p>
+                      <p className="order-total font-weight-bold">Total: ${order.total.toFixed(2)}</p>
+                      <p className="order-items font-weight-bold">Number of Items: {order.items.length}</p>
+                      {order.shipping && Object.keys(order.shipping).length > 0 && (
+                        <div className="shipping-info">
+                          <h4>Shipping Details:</h4>
+                          <p><strong>Name:</strong> {order.shipping.fullName}</p>
+                          <p><strong>Phone:</strong> {order.shipping.phone}</p>
+                          <p><strong>Address:</strong> {order.shipping.street}, {order.shipping.building}</p>
+                          <p><strong>Address Inside Country:</strong> {order.shipping.addressInCountry}</p>
+                          <p><strong>City:</strong> {order.shipping.city}, {order.shipping.governorate}</p>
+                          {order.shipping.additionalInfo && (
+                            <p><strong>Notes:</strong> {order.shipping.additionalInfo}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <div className="order-items">
                       {order.items.map((item, index) => (
                         <div key={index} className="order-item">
@@ -848,200 +750,74 @@ export default function Admin({ darkMode = false }) {
         {activeTab === 'stats' && (
           <div className="stats-section">
             <div className="section-header">
-              <h2>Detailed Statistics</h2>
+              <h2>📊 Advanced Statistics</h2>
               <button className="refresh-btn" onClick={loadData}>
-                Refresh Data
+                Refresh Stats
               </button>
             </div>
             
             <div className="stats-grid">
               <div className="stats-card">
-                <h3>Products by Category</h3>
-                <div className="category-stats">
-                  {(() => {
-                    const products = JSON.parse(localStorage.getItem('ecommerce_products') || '[]');
-                    const categoryStats = {};
-                    products.forEach(product => {
-                      categoryStats[product.category] = (categoryStats[product.category] || 0) + 1;
-                    });
-                    return Object.entries(categoryStats).map(([category, count]) => (
-                      <div key={category} className="category-item">
-                        <span className="category-name">{category}</span>
-                        <span className="category-count">{count}</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-
-              <div className="stats-card">
-                <h3>Order Status</h3>
-                <div className="status-stats">
-                  {(() => {
-                    const statusStats = {};
-                    orders.forEach(order => {
-                      const status = order.status || 'pending';
-                      statusStats[status] = (statusStats[status] || 0) + 1;
-                    });
-                    return Object.entries(statusStats).map(([status, count]) => (
-                      <div key={status} className="status-item">
-                        <span className="status-name">{status}</span>
-                        <span className="status-count">{count}</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-
-              <div className="stats-card">
-                <h3>Top Products</h3>
-                <div className="product-stats">
-                  {(() => {
-                    const products = JSON.parse(localStorage.getItem('ecommerce_products') || '[]');
-                    return products.slice(0, 5).map(product => (
-                      <div key={product.id} className="product-item">
-                        <span className="product-name">{product.title}</span>
-                        <span className="product-price">${product.price}</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'products' && (
-          <div className="products-section">
-            <div className="section-header">
-              <h2>Products Management</h2>
-              <button className="refresh-btn" onClick={loadData}>
-                Refresh Data
-              </button>
-            </div>
-            
-            <div className="products-list">
-              {(() => {
-                const products = JSON.parse(localStorage.getItem('ecommerce_products') || '[]');
-                const defaultProducts = [
-                  { id: 1, title: "Hoodie", quantity: 10, category: "Clothing" },
-                  { id: 2, title: "T-Shirt", quantity: 20, category: "Clothing" },
-                  { id: 3, title: "Jeans", quantity: 5, category: "Clothing" },
-                  { id: 4, title: "Sneakers", quantity: 0, category: "Shoes" },
-                  { id: 5, title: "Running Shoes", quantity: 15, category: "Shoes" },
-                  { id: 6, title: "Watch", quantity: 8, category: "Accessories" },
-                  { id: 7, title: "Backpack", quantity: 25, category: "Accessories" },
-                  { id: 8, title: "Cap", quantity: 12, category: "Accessories" }
-                ];
-                
-                const allProducts = products.length > 0 ? products : defaultProducts;
-                const outOfStockProducts = allProducts.filter(product => product.quantity <= 0);
-                const inStockProducts = allProducts.filter(product => product.quantity > 0);
-                
-                return (
-                  <div>
-                    {outOfStockProducts.length > 0 && (
-                      <div className="out-of-stock-section">
-                        <h3>🛑 Out of Stock Products ({outOfStockProducts.length})</h3>
-                        <div className="products-grid">
-                          {outOfStockProducts.map((product) => (
-                            <div key={product.id} className="product-card out-of-stock">
-                              <div className="product-info">
-                                <h4>{product.title}</h4>
-                                <p className="product-category">{product.category}</p>
-                                <p className="product-quantity">Quantity: <span className="out-of-stock-badge">0</span></p>
-                              </div>
-                              <div className="product-actions">
-                                <button 
-                                  className="restock-btn"
-                                  onClick={() => {
-                                    const newQuantity = prompt(`Enter new quantity for ${product.title}:`);
-                                    if (newQuantity && !isNaN(newQuantity) && parseInt(newQuantity) > 0) {
-                                      const updatedProducts = allProducts.map(p => 
-                                        p.id === product.id ? { ...p, quantity: parseInt(newQuantity) } : p
-                                      );
-                                      localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts));
-                                      loadData();
-                                      alert(`${product.title} has been restocked with ${newQuantity} items!`);
-                                    }
-                                  }}
-                                >
-                                  Restock
-                                </button>
-                                <button 
-                                  className="delete-product-btn"
-                                  onClick={() => {
-                                    if (window.confirm(`Are you sure you want to delete "${product.title}"? This action cannot be undone!`)) {
-                                      // Add notification before deleting
-                                      addProductDeletionNotification(product);
-                                      
-                                      // Remove product from all products
-                                      const updatedProducts = allProducts.filter(p => p.id !== product.id);
-                                      localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts));
-                                      loadData();
-                                    }
-                                  }}
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="in-stock-section">
-                      <h3>✅ In Stock Products ({inStockProducts.length})</h3>
-                      <div className="products-grid">
-                        {inStockProducts.map((product) => (
-                          <div key={product.id} className="product-card in-stock">
-                            <div className="product-info">
-                              <h4>{product.title}</h4>
-                              <p className="product-category">{product.category}</p>
-                              <p className="product-quantity">Quantity: <span className="in-stock-badge">{product.quantity}</span></p>
-                            </div>
-                            <div className="product-actions">
-                              <button 
-                                className="update-quantity-btn"
-                                onClick={() => {
-                                  const newQuantity = prompt(`Enter new quantity for ${product.title} (current: ${product.quantity}):`);
-                                  if (newQuantity && !isNaN(newQuantity) && parseInt(newQuantity) >= 0) {
-                                    const updatedProducts = allProducts.map(p => 
-                                      p.id === product.id ? { ...p, quantity: parseInt(newQuantity) } : p
-                                    );
-                                    localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts));
-                                    loadData();
-                                    alert(`${product.title} quantity updated to ${newQuantity}!`);
-                                  }
-                                }}
-                              >
-                                Update Quantity
-                              </button>
-                              <button 
-                                className="delete-product-btn"
-                                onClick={() => {
-                                  if (window.confirm(`Are you sure you want to delete "${product.title}"? This action cannot be undone!`)) {
-                                    // Add notification before deleting
-                                    addProductDeletionNotification(product);
-                                    
-                                    // Remove product from all products
-                                    const updatedProducts = allProducts.filter(p => p.id !== product.id);
-                                    localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts));
-                                    loadData();
-                                  }
-                                }}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                <h3>📈 Revenue Analytics</h3>
+                <div className="revenue-stats">
+                  <div className="stat-item">
+                    <span className="stat-label">Total Revenue</span>
+                    <span className="stat-value">${orders.reduce((total, order) => total + order.total, 0).toFixed(2)}</span>
                   </div>
-                );
-              })()}
+                  <div className="stat-item">
+                    <span className="stat-label">Average Order Value</span>
+                    <span className="stat-value">${orders.length > 0 ? (orders.reduce((total, order) => total + order.total, 0) / orders.length).toFixed(2) : '0.00'}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Orders This Month</span>
+                    <span className="stat-value">{orders.filter(order => {
+                      const orderDate = new Date(order.date);
+                      const now = new Date();
+                      return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+                    }).length}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="stats-card">
+                <h3>👥 User Analytics</h3>
+                <div className="user-stats">
+                  <div className="stat-item">
+                    <span className="stat-label">Total Users</span>
+                    <span className="stat-value">{users.length}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Active Users</span>
+                    <span className="stat-value">{users.filter(user => user.orders && user.orders.length > 0).length}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">New Users This Month</span>
+                    <span className="stat-value">{users.filter(user => {
+                      const userDate = new Date(user.createdAt);
+                      const now = new Date();
+                      return userDate.getMonth() === now.getMonth() && userDate.getFullYear() === now.getFullYear();
+                    }).length}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="stats-card">
+                <h3>🛒 Order Status</h3>
+                <div className="order-status-stats">
+                  <div className="stat-item">
+                    <span className="stat-label">Pending Orders</span>
+                    <span className="stat-value">{orders.filter(order => order.status === 'pending').length}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Approved Orders</span>
+                    <span className="stat-value">{orders.filter(order => order.status === 'approved').length}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Rejected Orders</span>
+                    <span className="stat-value">{orders.filter(order => order.status === 'rejected').length}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1049,77 +825,80 @@ export default function Admin({ darkMode = false }) {
         {activeTab === 'manage-admins' && (
           <div className="manage-admins-section">
             <div className="section-header">
-              <h2>Add New Admin</h2>
-              <div className="header-actions">
-                <button className="add-protected-admins-btn" onClick={addProtectedAdmins}>
-                  Add Protected Admins
-                </button>
-                <button className="add-specific-admin-btn" onClick={addSpecificAdmin}>
-                  Add Amr Admin
-                </button>
-                <button className="refresh-btn" onClick={loadData}>
-                  Refresh Data
-                </button>
-              </div>
+              <h2>👥 Manage Admins</h2>
+              <button className="refresh-btn" onClick={loadData}>
+                Refresh Data
+              </button>
             </div>
             
             <div className="add-admin-form">
+              <h3>Add New Admin</h3>
               <div className="form-group">
-                <label>Admin Name:</label>
-                <input
-                  type="text"
-                  value={newAdminName}
-                  onChange={(e) => setNewAdminName(e.target.value)}
-                  placeholder="Enter admin name"
-                  className="admin-input"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Email Address:</label>
+                <label htmlFor="adminEmail">Admin Email:</label>
                 <input
                   type="email"
-                  value={newAdminEmail}
-                  onChange={(e) => setNewAdminEmail(e.target.value)}
-                  placeholder="Enter email address"
+                  id="adminEmail"
                   className="admin-input"
+                  placeholder="Enter admin email"
+                  value={newAdmin.email}
+                  onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})}
                 />
               </div>
-              
               <div className="form-group">
-                <label>Password:</label>
+                <label htmlFor="adminPassword">Password:</label>
                 <input
                   type="password"
-                  value={newAdminPassword}
-                  onChange={(e) => setNewAdminPassword(e.target.value)}
-                  placeholder="Enter password (min 6 characters)"
+                  id="adminPassword"
                   className="admin-input"
+                  placeholder="Enter password"
+                  value={newAdmin.password}
+                  onChange={(e) => setNewAdmin({...newAdmin, password: e.target.value})}
                 />
               </div>
-              
-              <button 
-                className="add-admin-btn"
-                onClick={addNewAdmin}
-              >
-                Add New Admin
+              <div className="form-group">
+                <label htmlFor="adminName">Name:</label>
+                <input
+                  type="text"
+                  id="adminName"
+                  className="admin-input"
+                  placeholder="Enter admin name"
+                  value={newAdmin.name}
+                  onChange={(e) => setNewAdmin({...newAdmin, name: e.target.value})}
+                />
+              </div>
+              <button className="add-admin-btn" onClick={() => {
+                if (newAdmin.email && newAdmin.password && newAdmin.name) {
+                  try {
+                    database.registerUser(newAdmin);
+                    const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
+                    if (!adminEmails.includes(newAdmin.email)) {
+                      adminEmails.push(newAdmin.email);
+                      localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
+                    }
+                    setNewAdmin({ email: '', password: '', name: '' });
+                    alert('Admin added successfully!');
+                    loadData();
+                  } catch (error) {
+                    alert('Error adding admin: ' + error.message);
+                  }
+                } else {
+                  alert('Please fill all fields');
+                }
+              }}>
+                Add Admin
               </button>
-              
-              {adminMessage && (
-                <div className={`admin-message ${adminMessage.includes('Error') ? 'error' : 'success'}`}>
-                  {adminMessage}
-                </div>
-              )}
+              {addAdminError && <div className="admin-message error">{addAdminError}</div>}
             </div>
 
             <div className="current-admins">
-              <h3>Current Admin List</h3>
+              <h3>Current Admins</h3>
               <div className="admins-list">
                 {(() => {
-                  const savedAdminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
-                  const defaultAdminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com', 'admin-test@gmail.com', 'admin@gmail.com'];
-                  const allAdminEmails = savedAdminEmails.length > 0 ? savedAdminEmails : defaultAdminEmails;
+                  const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
+                  const defaultAdmins = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'];
+                  const allAdmins = adminEmails.length > 0 ? adminEmails : defaultAdmins;
                   
-                  return allAdminEmails.map((email, index) => (
+                  return allAdmins.map((email, index) => (
                     <div key={index} className="admin-item">
                       <span className="admin-email">{email}</span>
                       <span className="admin-status">Active</span>
@@ -1130,19 +909,84 @@ export default function Admin({ darkMode = false }) {
             </div>
           </div>
         )}
-      </div>
 
-      <div className="admin-footer">
-         <div className="footer-actions">
-           <button className="clear-db-btn" onClick={clearDatabase}>
-             Clear All Data
-           </button>
-         </div>
-         <p className="warning">Warning: Clear action cannot be undone!</p>
-         <p className="save-info">
-           Auto-save: Every 30 seconds | Last save: {lastSaveTime ? formatShortDate(lastSaveTime) : 'Never'}
-         </p>
-       </div>
+        {activeTab === 'analytics' && (
+          <div className="analytics-section">
+            <div className="section-header">
+              <h2>📈 Real-time Analytics</h2>
+              <button className="refresh-btn" onClick={loadData}>
+                Update Analytics
+              </button>
+            </div>
+            
+            <div className="analytics-grid">
+              <div className="analytics-card">
+                <h3>🔥 Top Performing Products</h3>
+                <div className="top-products">
+                  {(() => {
+                    const productStats = {};
+                    orders.forEach(order => {
+                      order.items.forEach(item => {
+                        if (!productStats[item.name]) {
+                          productStats[item.name] = { quantity: 0, revenue: 0 };
+                        }
+                        productStats[item.name].quantity += item.quantity;
+                        productStats[item.name].revenue += item.price * item.quantity;
+                      });
+                    });
+                    
+                    const topProducts = Object.entries(productStats)
+                      .sort(([,a], [,b]) => b.revenue - a.revenue)
+                      .slice(0, 5);
+                    
+                    return topProducts.map(([name, stats], index) => (
+                      <div key={name} className="product-stat">
+                        <span className="rank">#{index + 1}</span>
+                        <span className="name">{name}</span>
+                        <span className="quantity">Sold: {stats.quantity}</span>
+                        <span className="revenue">${stats.revenue.toFixed(2)}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
+              <div className="analytics-card">
+                <h3>📅 Recent Activity</h3>
+                <div className="recent-activity">
+                  {orders.slice(0, 5).map(order => (
+                    <div key={order.id} className="activity-item">
+                      <span className="activity-icon">🛒</span>
+                      <span className="activity-text">Order #{order.orderNumber} - ${order.total.toFixed(2)}</span>
+                      <span className="activity-time">{formatShortDate(order.date)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="analytics-card">
+                <h3>🎯 Quick Actions</h3>
+                <div className="quick-actions">
+                  <button className="quick-action-btn" onClick={() => setActiveTab('users')}>
+                    👥 Manage Users
+                  </button>
+                  <button className="quick-action-btn" onClick={() => setActiveTab('orders')}>
+                    📦 View Orders
+                  </button>
+                  <button className="quick-action-btn" onClick={clearDatabase}>
+                    🗑️ Clear Database
+                  </button>
+                  <button className="quick-action-btn" onClick={addProtectedAdmins}>
+                    🛡️ Add Protected Admins
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+
+      </div>
     </div>
   );
 } 

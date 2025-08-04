@@ -23,6 +23,10 @@ export default function Nav({ cartItemsCount = 0, user = null, onLogout = null, 
     setIsMenuOpen(false)
   }
 
+  const closeNotifications = () => {
+    setShowNotifications(false)
+  }
+
   // Handle count animation
   useEffect(() => {
     if (cartItemsCount !== prevCountRef.current) {
@@ -50,8 +54,28 @@ export default function Nav({ cartItemsCount = 0, user = null, onLogout = null, 
     return () => clearInterval(interval)
   }, [user])
 
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showNotifications && !event.target.closest('.notifications-panel') && !event.target.closest('.notifications-btn')) {
+        setShowNotifications(false)
+      }
+    }
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showNotifications])
+
   return (
     <div className='nav-container'>
+      {/* Navigation Overlay */}
+      {isMenuOpen && <div className="nav-overlay active" onClick={closeMenu}></div>}
+      
       <div className='hamburger-menu' onClick={toggleMenu}>
         {isMenuOpen ? (
           <div className="close-icon">×</div>
@@ -64,7 +88,7 @@ export default function Nav({ cartItemsCount = 0, user = null, onLogout = null, 
         )}
       </div>
       
-             <div className={`nav-links ${isMenuOpen ? 'nav-open' : ''}`}>
+      <div className={`nav-links ${isMenuOpen ? 'nav-open' : ''}`}>
         {/* Main Navigation Links */}
         <Link to='/' onClick={closeMenu}>Home</Link>
         <Link to='/about' onClick={closeMenu}>About</Link>  
@@ -78,7 +102,7 @@ export default function Nav({ cartItemsCount = 0, user = null, onLogout = null, 
             {/* Cart Link */}
             <Link to='/cart' className='cart-nav-link' onClick={closeMenu}>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="m397.78 316h-205.13a15 15 0 0 1 -14.65-11.67l-34.54-150.48a15 15 0 0 1 14.62-18.36h274.27a15 15 0 0 1 14.65 18.36l-34.6 150.48a15 15 0 0 1 -14.62 11.67zm-193.19-30h181.25l27.67-120.48h-236.6z"></path><path d="m222 450a57.48 57.48 0 1 1 57.48-57.48 57.54 57.54 0 0 1 -57.48 57.48zm0-84.95a27.48 27.48 0 1 0 27.48 27.47 27.5 27.5 0 0 0 -27.48-27.47z"></path><path d="m368.42 450a57.48 57.48 0 1 1 57.48-57.48 57.54 57.54 0 0 1 -57.48 57.48zm0-84.95a27.48 27.48 0 1 0 27.48 27.47 27.5 27.5 0 0 0 -27.48-27.47z"></path><path d="m158.08 165.49a15 15 0 0 1 -14.23-10.26l-25.71-77.23h-47.44a15 15 0 1 1 0-30h58.3a15 15 0 0 1 14.23 10.26l29.13 87.49a15 15 0 0 1 -14.23 19.74z"></path></svg>
-              <span className={`cart-count ${isCountUpdated ? 'updated' : ''}`} style={{display: 'flex'}}>{cartItemsCount}</span>
+              <span className={`cart-count ${isCountUpdated ? 'updated' : ''}`}>{cartItemsCount}</span>
             </Link>
             
             {/* Notifications Button */}
@@ -114,19 +138,37 @@ export default function Nav({ cartItemsCount = 0, user = null, onLogout = null, 
         
         {/* Dark Mode Toggle - Removed */}
       </div>
+      
+      {/* Brand/Logo - Right Side */}
+      <Link to='/' className={`nav-brand ${user && ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com', 'admin-test@gmail.com', 'admin@gmail.com'].includes(user.email) ? 'admin-brand' : ''}`} onClick={closeMenu}>
+        <img 
+          src={require('../Modern E-Shop Logo Design.png')} 
+          alt="Modern E-Shop Logo" 
+          className="nav-logo"
+        />
+        <span className={`nav-brand-text ${user && ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com', 'admin-test@gmail.com', 'admin@gmail.com'].includes(user.email) ? 'admin-text' : ''}`}>
+          Yahia Store
+        </span>
+      </Link>
        
-               {/* Notifications Panel */}
+      {/* Notifications Panel */}
         {showNotifications && user && (
-          <div className="notifications-panel">
-            <Notifications onNotificationsUpdate={() => {
-              // Update unread count when notifications are updated
-              const allNotifications = JSON.parse(localStorage.getItem('order_notifications') || '[]')
-              const userNotifications = allNotifications.filter(notification => 
-                notification.userEmail === user.email && !notification.read
-              )
-              setUnreadNotifications(userNotifications.length)
-            }} darkMode={darkMode} />
-          </div>
+          <>
+            <div className="notifications-overlay" onClick={closeNotifications}></div>
+            <div className="notifications-panel">
+              <button className="notifications-close-btn" onClick={closeNotifications}>
+                ×
+              </button>
+              <Notifications onNotificationsUpdate={() => {
+                // Update unread count when notifications are updated
+                const allNotifications = JSON.parse(localStorage.getItem('order_notifications') || '[]')
+                const userNotifications = allNotifications.filter(notification => 
+                  notification.userEmail === user.email && !notification.read
+                )
+                setUnreadNotifications(userNotifications.length)
+              }} darkMode={darkMode} />
+            </div>
+          </>
         )}
     </div>
   )

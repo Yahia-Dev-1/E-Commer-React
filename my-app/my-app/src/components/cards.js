@@ -1,22 +1,45 @@
 import React, { useState } from 'react'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
+import SEO from './SEO'
 import '../styles/cards.css'
 
-// Individual Card Component with props
+
+// Function to check if current user is admin
+const isCurrentUserAdmin = () => {
+  const currentUserEmail = localStorage.getItem('currentUserEmail');
+  if (!currentUserEmail) return false;
+  
+  const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
+  const defaultAdminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'];
+  const allAdminEmails = adminEmails.length > 0 ? adminEmails : defaultAdminEmails;
+  
+  return allAdminEmails.includes(currentUserEmail);
+};
+
+// Optimized Card Component with lazy loading images
 function Card({ image, title, description, price, quantity, onAddToCart }) {
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageError, setImageError] = useState(false)
+
+  const handleImageLoad = () => {
+    setImageLoaded(true)
+  }
+
   const handleImageError = (e) => {
-    // Fallback to a placeholder if image fails to load
-    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMCAzMEg3MFY3MEgzMFYzMFoiIGZpbGw9IiNEMUQ1REIiLz4KPHN2ZyB4PSIzNSIgeT0iMzUiIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAxOGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4LTMuNTkgOC04IDh6IiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMiA2Yy0zLjMxIDAtNiAyLjY5IDYgNnMtMi42OSA2LTYgNi02LTIuNjktNi02IDIuNjktNiA2LTZ6IiBmaWxsPSIjOUI5QkEwIi8+Cjwvc3ZnPgo8L3N2Zz4K'
+    setImageError(true)
+    e.target.src = 'https://via.placeholder.com/400x400?text=Image+Not+Found'
   }
 
   const handleClick = () => {
-    if (onAddToCart && !isOutOfStock) {
-      onAddToCart()
+    if (quantity > 0) {
+      onAddToCart();
     }
-    // No alert for out of stock - visual feedback is enough
   }
 
-  const isOutOfStock = quantity <= 0
+  const isOutOfStock = quantity <= 0;
+  const isLowStock = quantity > 0 && quantity <= 5;
+  const isInStock = quantity > 5;
+  const isAdmin = isCurrentUserAdmin();
 
   return (
     <div className={`card ${isOutOfStock ? 'out-of-stock' : ''}`} style={{ 
@@ -25,12 +48,28 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
       pointerEvents: isOutOfStock ? 'none' : 'auto'
     }}>
       <div className="card-img">
+        {/* Placeholder while image loads */}
+        {!imageLoaded && !imageError && (
+          <div className="image-placeholder" style={{
+            width: '100%',
+            height: '200px',
+            background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'loading 1.5s infinite',
+            borderRadius: '8px'
+          }}></div>
+        )}
         <img 
           className="img" 
           src={image} 
           alt={title}
+          loading="lazy"
+          onLoad={handleImageLoad}
           onError={handleImageError}
-          style={{ filter: isOutOfStock ? 'grayscale(100%)' : 'none' }}
+          style={{ 
+            filter: isOutOfStock ? 'grayscale(100%)' : 'none',
+            display: imageLoaded && !imageError ? 'block' : 'none'
+          }}
         />
         {isOutOfStock && (
           <div className="out-of-stock-overlay">
@@ -40,16 +79,22 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
       </div>
       <div className="card-title">{title}</div>
       <div className="card-subtitle">{description}</div>
-      <div className="card-quantity">
+      <div className="quantity-badge-container" style={{ textAlign: 'center', margin: '8px 0' }}>
         <span className={`quantity-badge ${isOutOfStock ? 'out-of-stock' : quantity <= 5 ? 'low-stock' : 'in-stock'}`}>
-          {isOutOfStock ? 'Out of Stock' : quantity <= 5 ? `Low Stock (${quantity})` : `${quantity} Available`}
+          {isOutOfStock ? 'Out of Stock' : 
+           isAdmin ? (quantity <= 5 ? `Low (${quantity})` : `${quantity}`) : 
+           'In Stock'}
         </span>
       </div>
       <hr className="card-divider"/>
       <div className="card-footer">
-        <div className="card-price"><span>$</span> {price}</div>
+        <div className="card-price">
+          <span className="currency-symbol">$</span>
+          <span className="price-value">{price}</span>
+          <div className="price-decoration"></div>
+        </div>
         <button 
-          className={`card-btn ${isOutOfStock ? 'disabled' : ''}`} 
+          className={`card-btn ${isOutOfStock ? 'disabled' : ''} ${isLowStock ? 'low-stock' : ''} ${isInStock ? 'in-stock' : ''}`} 
           onClick={handleClick}
           disabled={isOutOfStock}
           style={{ 
@@ -86,85 +131,32 @@ export default function Cards({ addToCart, darkMode = false }) {
   // Load products from localStorage on component mount and listen for changes
   React.useEffect(() => {
     const loadProducts = () => {
-      const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
-      if (savedProducts.length > 0) {
-        setProducts(savedProducts)
-      } else {
-        // Default products if no custom products exist
+      try {
+        const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
+        
+        // تحقق من وجود منتجات محفوظة
+        if (savedProducts.length > 0) {
+          console.log(`✅ Loaded ${savedProducts.length} products from localStorage`)
+          setProducts(savedProducts)
+        } else {
+          // لا توجد منتجات محفوظة، اترك القائمة فارغة
+          console.log('ℹ️ No products found in localStorage, starting with empty list')
+          setProducts([])
+        }
+      } catch (error) {
+        console.error('Error loading products:', error)
+        // Fallback to default products if there's an error
         const defaultProducts = [
-    {
-      id: 1,
-      image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop",
-      title: "Hoodie",
-      description: "Comfortable and stylish hoodie for everyday wear.",
-      price: "49.99",
-      category: "Clothing",
-      quantity: 10
-    },
-    {
-      id: 2,
-      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
-      title: "T-Shirt",
-      description: "Classic cotton t-shirt with modern design.",
-      price: "24.99",
-      category: "Clothing",
-      quantity: 20
-    },
-    {
-      id: 3,
-      image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop",
-      title: "Jeans",
-      description: "High-quality denim jeans for a perfect fit.",
-      price: "79.99",
-      category: "Clothing",
-      quantity: 5
-    },
-    {
-      id: 4,
-      image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop",
-      title: "Sneakers",
-      description: "Comfortable sneakers for daily activities.",
-      price: "89.99",
-      category: "Shoes",
-      quantity: 0
-    },
-    {
-      id: 5,
-      image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop",
-      title: "Running Shoes",
-      description: "Professional running shoes for athletes.",
-      price: "129.99",
-      category: "Shoes",
-      quantity: 15
-    },
-    {
-      id: 6,
-      image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop",
-      title: "Watch",
-      description: "Elegant watch with modern design.",
-      price: "199.99",
-      category: "Accessories",
-      quantity: 8
-    },
-    {
-      id: 7,
-      image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
-      title: "Backpack",
-      description: "Stylish backpack for daily use.",
-      price: "59.99",
-      category: "Accessories",
-      quantity: 25
-    },
-    {
-      id: 8,
-      image: "https://images.unsplash.com/photo-1521369909029-2afed882baee?w=400&h=400&fit=crop",
-      title: "Cap",
-      description: "Trendy cap for outdoor activities.",
-      price: "19.99",
-      category: "Accessories",
-      quantity: 12
-    }
-  ]
+          {
+            id: 1,
+            image: "https://picsum.photos/400/400?random=1",
+            title: "Hoodie",
+            description: "Comfortable and stylish hoodie for everyday wear.",
+            price: "49.99",
+            category: "Clothing",
+            quantity: 10
+          }
+        ]
         setProducts(defaultProducts)
       }
     }
@@ -195,16 +187,20 @@ export default function Cards({ addToCart, darkMode = false }) {
     }
   }, [])
 
-  // Get unique categories
-  const categories = ['All', ...new Set(products.map(product => product.category))]
+  // Get unique categories (memoized)
+  const categories = React.useMemo(() => {
+    return ['All', ...new Set(products.map(product => product.category))]
+  }, [products])
 
-  // Filter products based on active filter and search term
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = activeFilter === 'All' || product.category === activeFilter
-    const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesCategory && matchesSearch
-  })
+  // Filter products based on active filter and search term (memoized)
+  const filteredProducts = React.useMemo(() => {
+    return products.filter(product => {
+      const matchesCategory = activeFilter === 'All' || product.category === activeFilter
+      const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.description.toLowerCase().includes(searchTerm.toLowerCase())
+      return matchesCategory && matchesSearch
+    })
+  }, [products, activeFilter, searchTerm])
 
   // Handle filter change
   const handleFilterChange = (category) => {
@@ -220,99 +216,56 @@ export default function Cards({ addToCart, darkMode = false }) {
 
   // Function to refresh products from localStorage
   const refreshProducts = () => {
-    const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
-    if (savedProducts.length > 0) {
-      setProducts(savedProducts)
-    } else {
-      // Default products if no custom products exist
-      const defaultProducts = [
-        {
-          id: 1,
-          image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop",
-          title: "Hoodie",
-          description: "Comfortable and stylish hoodie for everyday wear.",
-          price: "49.99",
-          category: "Clothing",
-          quantity: 10
-        },
-        {
-          id: 2,
-          image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
-          title: "T-Shirt",
-          description: "Classic cotton t-shirt with modern design.",
-          price: "24.99",
-          category: "Clothing",
-          quantity: 20
-        },
-        {
-          id: 3,
-          image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop",
-          title: "Jeans",
-          description: "High-quality denim jeans for a perfect fit.",
-          price: "79.99",
-          category: "Clothing",
-          quantity: 5
-        },
-        {
-          id: 4,
-          image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop",
-          title: "Sneakers",
-          description: "Comfortable sneakers for daily activities.",
-          price: "89.99",
-          category: "Shoes",
-          quantity: 0
-        },
-        {
-          id: 5,
-          image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop",
-          title: "Running Shoes",
-          description: "Professional running shoes for athletes.",
-          price: "129.99",
-          category: "Shoes",
-          quantity: 15
-        },
-        {
-          id: 6,
-          image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop",
-          title: "Watch",
-          description: "Elegant watch with modern design.",
-          price: "199.99",
-          category: "Accessories",
-          quantity: 8
-        },
-        {
-          id: 7,
-          image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
-          title: "Backpack",
-          description: "Stylish backpack for daily use.",
-          price: "59.99",
-          category: "Accessories",
-          quantity: 25
-        },
-        {
-          id: 8,
-          image: "https://images.unsplash.com/photo-1521369909029-2afed882baee?w=400&h=400&fit=crop",
-          title: "Cap",
-          description: "Trendy cap for outdoor activities.",
-          price: "19.99",
-          category: "Accessories",
-          quantity: 12
-        }
-      ]
-      setProducts(defaultProducts)
+    try {
+      const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
+      if (savedProducts.length > 0) {
+        console.log(`🔄 Refreshed ${savedProducts.length} products from localStorage`)
+        setProducts(savedProducts)
+      } else {
+        console.log('ℹ️ No products found in localStorage')
+        setProducts([])
+      }
+    } catch (error) {
+      console.error('Error refreshing products:', error)
+      setProducts([])
     }
   }
 
+  // دالة لمسح جميع المنتجات من اللوكل استورج
+  const clearAllProducts = () => {
+    if (window.confirm('Are you sure you want to clear all products? This action cannot be undone.')) {
+      try {
+        localStorage.removeItem('ecommerce_products')
+        localStorage.removeItem('has_default_products')
+        setProducts([])
+        console.log('🗑️ All products cleared from localStorage')
+        alert('All products have been cleared successfully!')
+      } catch (error) {
+        console.error('Error clearing products:', error)
+        alert('Error clearing products')
+      }
+    }
+  }
+
+  const isAdmin = isCurrentUserAdmin();
+
   return (
-    <div className={`cards-section ${darkMode ? 'dark-mode' : ''}`}>
-      {/* Lottie Animation at Top */}
-      <div className="lottie-container">
-        <DotLottieReact
-          src="https://lottie.host/9e31c819-612c-4f38-b3fd-2e53e6a10104/EEfP3i9LcG.lottie"
-          loop
-          autoplay
-        />
-      </div>
+    <>
+      <SEO 
+        title="Yahia Store - Advanced E-commerce Store | Safe and Fast Shopping"
+        description="Discover a wide range of clothing, shoes, and accessories in our e-commerce store. Safe and fast shopping with excellent customer service and competitive prices."
+        keywords="e-commerce store, clothing, shoes, accessories, online shopping, offers, discounts, hoodie, t-shirt, jeans, running shoes, watch, backpack, cap"
+        url="https://yahia-dev-1.github.io/E-Commer-React"
+      />
+      <div className={`cards-section ${darkMode ? 'dark-mode' : ''}`}>
+        {/* Lottie Animation at Top */}
+        <div className="lottie-container">
+          <DotLottieReact
+            src="https://lottie.host/9e31c819-612c-4f38-b3fd-2e53e6a10104/EEfP3i9LcG.lottie"
+            loop
+            autoplay
+          />
+        </div>
 
    
       {/* Search Bar */}
@@ -353,10 +306,17 @@ export default function Cards({ addToCart, darkMode = false }) {
             />
           ))}
         </div>
+        {/* Show products count for regular users */}
+        {!isAdmin && (
+          <div className="products-count-simple">
+            <p>Products Count: {filteredProducts.length}</p>
+          </div>
+        )}
       </div>
 
-             {/* Products Count and Stock Stats */}
-               <div className="products-count">
+      {/* Products Count and Stock Stats - Only for Admins */}
+      {isAdmin && (
+        <div className="products-count">
           <div className="count-header">
             <p>Products Count: {filteredProducts.length}</p>
             <button 
@@ -365,6 +325,13 @@ export default function Cards({ addToCart, darkMode = false }) {
               title="Refresh Products"
             >
               🔄 Refresh
+            </button>
+            <button 
+              className="clear-btn"
+              onClick={clearAllProducts}
+              title="Clear All Products"
+            >
+              🗑️ Clear All
             </button>
           </div>
           <div className="stock-stats">
@@ -379,6 +346,7 @@ export default function Cards({ addToCart, darkMode = false }) {
             </span>
           </div>
         </div>
+      )}
 
       {/* Products Grid */}
       <div className='cards-container'>
@@ -401,6 +369,9 @@ export default function Cards({ addToCart, darkMode = false }) {
           <p>No products found in this category</p>
         </div>
       )}
+      
+      
     </div>
+    </>
   )
 }

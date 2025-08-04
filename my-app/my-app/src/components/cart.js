@@ -18,6 +18,8 @@ export default function Cart({ cartItems, updateQuantity, clearCart, createOrder
     additionalInfo: ''
   })
 
+
+
   // دالة للتحقق من الكمية المتاحة
   const checkAvailableQuantity = (itemId, requestedQuantity) => {
     try {
@@ -286,7 +288,7 @@ export default function Cart({ cartItems, updateQuantity, clearCart, createOrder
                   <div className="item-price">${item.price}</div>
                   <div className="item-availability">
                     <span className={`availability-badge ${checkAvailableQuantity(item.id) > 0 ? 'in-stock' : 'out-of-stock'}`}>
-                      {checkAvailableQuantity(item.id) > 0 ? `${checkAvailableQuantity(item.id)} Available` : 'Out of Stock'}
+                      {checkAvailableQuantity(item.id) > 0 ? `${checkAvailableQuantity(item.id)} Available` : ''}
                     </span>
                   </div>
                 </div>

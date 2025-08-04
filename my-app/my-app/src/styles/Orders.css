@@ -263,8 +263,8 @@
 }
 
 .dark-mode .status-badge {
-  background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
-  box-shadow: 0 2px 8px rgba(0, 212, 170, 0.4);
+  background: linear-gradient(135deg, #8a2be2 0%, #667eea 100%);
+  box-shadow: 0 2px 8px rgba(138, 43, 226, 0.4);
 }
 
 .order-items {
@@ -370,11 +370,11 @@
 }
 
 .dark-mode .item-total {
-  background: linear-gradient(45deg, #00d4aa, #00b894);
+  background: linear-gradient(45deg, #8a2be2, #667eea);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 1px 3px rgba(0, 212, 170, 0.3);
+  text-shadow: 0 1px 3px rgba(138, 43, 226, 0.3);
 }
 
 .order-footer {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/Login.css';
 import database from '../utils/database';
 
+
 export default function Login({ onLogin, darkMode = false }) {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -179,6 +180,8 @@ export default function Login({ onLogin, darkMode = false }) {
           <p>Saved Orders: {database.getOrders().length}</p>
         </div>
       </div>
+      
+      
     </div>
   );
 } 

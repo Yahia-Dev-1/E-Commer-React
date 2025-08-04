@@ -1,9 +1,18 @@
 import React from 'react'
+import SEO from './SEO'
 import '../styles/Services.css'
+
 
 export default function Services({ darkMode = false }) {
   return (
-    <div className={`services-container ${darkMode ? 'dark-mode' : ''}`}>
+    <>
+      <SEO 
+        title="Our Services - Yahia Store | Safe and Fast Shopping with Premium Service"
+        description="Discover our premium services: secure online shopping, fast delivery, secure payments, easy returns, personalized experience, and 24/7 support."
+        keywords="store services, online shopping, fast delivery, secure payments, easy returns, customer support, personalized experience"
+        url="https://yahia-dev-1.github.io/E-Commer-React/services"
+      />
+      <div className={`services-container ${darkMode ? 'dark-mode' : ''}`}>
       <div className="services-header">
         <h1>Our Services</h1>
         <p>Discover the amazing services we offer to enhance your shopping experience</p>
@@ -82,6 +91,9 @@ export default function Services({ darkMode = false }) {
           </ul>
         </div>
       </div>
+      
+      
     </div>
+    </>
   )
 }

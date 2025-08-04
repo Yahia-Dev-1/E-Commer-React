@@ -1,9 +1,18 @@
 import React from 'react'
+import SEO from './SEO'
 import '../styles/About.css'
+
 
 export default function About({ darkMode = false }) {
   return (
-    <div className={`about-container ${darkMode ? 'dark-mode' : ''}`}>
+    <>
+      <SEO 
+        title="About Us - Yahia Store | Learn About Our Story and Mission"
+        description="Learn about Yahia Store's story and our mission to provide an exceptional shopping experience. Discover our achievements, values, and commitment to quality and excellent service."
+        keywords="about us, store story, store mission, achievements, happy customers, customer service, product quality"
+        url="https://yahia-dev-1.github.io/E-Commer-React/about"
+      />
+      <div className={`about-container ${darkMode ? 'dark-mode' : ''}`}>
       <div className="about-header">
         <h1>About Our Store</h1>
         <p>Learn more about our mission, values, and commitment to providing the best shopping experience</p>
@@ -76,6 +85,9 @@ export default function About({ darkMode = false }) {
           </div>
         </div>
       </div>
+      
+      
     </div>
+    </>
   )
 }

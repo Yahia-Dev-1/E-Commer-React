@@ -14,6 +14,7 @@
     "@testing-library/user-event": "^13.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-helmet-async": "^2.0.5",
     "react-router-dom": "^6.8.0",
     "react-scripts": "^5.0.1",
     "web-vitals": "^2.1.4"
@@ -24,10 +25,12 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:analyze": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build",
+    "lighthouse": "lighthouse https://yahia-dev-1.github.io/E-Commer-React --output=html --output-path=./lighthouse-report.html"
   },
   "eslintConfig": {
     "extends": [

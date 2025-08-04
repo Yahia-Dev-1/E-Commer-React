@@ -6,7 +6,15 @@ export default function AddProducts({ darkMode = false }) {
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [message, setMessage] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [showStats, setShowStats] = useState(false)
+  const [showCategoriesSection, setShowCategoriesSection] = useState(false)
+  const [showCategoryForm, setShowCategoryForm] = useState(false)
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState(['electronics', 'clothing', 'books', 'home', 'sports', 'other'])
+  const [newCategory, setNewCategory] = useState('')
   const [newProduct, setNewProduct] = useState({
     title: '',
     price: '',
@@ -15,75 +23,174 @@ export default function AddProducts({ darkMode = false }) {
     description: '',
     category: 'electronics'
   })
-  const [showForm, setShowForm] = useState(false)
-  const [message, setMessage] = useState('')
-  const [showStats, setShowStats] = useState(false)
-  const [showCategoryForm, setShowCategoryForm] = useState(false)
-  const [newCategory, setNewCategory] = useState('')
-  const [categories, setCategories] = useState([
-    'electronics',
-    'clothing', 
-    'books',
-    'home',
-    'sports',
-    'other'
-  ])
+  const [editingProduct, setEditingProduct] = useState(null)
 
-  const [showRejectionForm, setShowRejectionForm] = useState(false)
-  const [rejectionReason, setRejectionReason] = useState('')
-  const [selectedOrder, setSelectedOrder] = useState(null)
+  // Protected admin emails
+  const protectedAdmins = [
+    'yahiapro400@gmail.com',
+    'yahiacool2009@gmail.com'
+  ]
 
-  // Check if user is admin
+  const isProtectedAdmin = () => {
+    const currentUserEmail = localStorage.getItem('currentUserEmail') || 
+                            localStorage.getItem('loggedInUser') || 
+                            localStorage.getItem('userEmail')
+    return currentUserEmail && protectedAdmins.includes(currentUserEmail)
+  }
+
+  const canModifyProtectedAdmin = () => {
+    const currentUserEmail = localStorage.getItem('currentUserEmail') || 
+                            localStorage.getItem('loggedInUser') || 
+                            localStorage.getItem('userEmail')
+    return currentUserEmail && protectedAdmins.includes(currentUserEmail)
+  }
+
   useEffect(() => {
-    const savedUserEmail = localStorage.getItem('currentUserEmail')
-    if (savedUserEmail) {
-      const savedUser = JSON.parse(localStorage.getItem('ecommerce_users') || '[]')
-        .find(user => user.email === savedUserEmail)
-      if (savedUser && ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'].includes(savedUser.email)) {
-        setUser(savedUser)
-      } else {
-        navigate('/')
+    // Preload images for faster loading
+    const preloadImages = () => {
+      products.forEach(product => {
+        if (product.image) {
+          const img = new Image();
+          img.src = product.image;
+        }
+      });
+    };
+
+    // Check if user is logged in - try multiple possible keys
+    const currentUserEmail = localStorage.getItem('currentUserEmail') || 
+                            localStorage.getItem('loggedInUser') || 
+                            localStorage.getItem('userEmail')
+    
+    // If no user email found, check if there are any users in localStorage
+    if (!currentUserEmail) {
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      if (users.length === 0) {
+        // If no users exist, allow access (first time setup)
+        setUser({ email: 'admin@gmail.com' })
+        loadProducts()
+        loadCategories()
+        setIsLoading(false)
         return
       }
-    } else {
+      // If users exist but no current user, redirect to login
+      navigate('/login')
+      return
+    }
+
+    // Get user data
+    const users = JSON.parse(localStorage.getItem('users') || '[]')
+    const currentUser = users.find(u => u.email === currentUserEmail)
+    
+    if (!currentUser) {
+      // If user not found in users array, check if it's an admin email
+      const adminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com', 'admin-test@gmail.com', 'admin@gmail.com']
+      if (adminEmails.includes(currentUserEmail)) {
+        setUser({ email: currentUserEmail })
+        loadProducts()
+        loadCategories()
+        setIsLoading(false)
+        return
+      }
+      navigate('/login')
+      return
+    }
+
+    // Check if user is admin
+    const adminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com', 'admin-test@gmail.com', 'admin@gmail.com']
+    if (!adminEmails.includes(currentUser.email)) {
       navigate('/')
       return
     }
-    
-    // Load existing products
-    const loadProducts = () => {
-      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
-      setProducts(existingProducts)
-    }
-    
+
+    setUser(currentUser)
+
     loadProducts()
+    loadCategories()
     
-    // مراقبة التغييرات في localStorage للمنتجات
+    // Preload images after products are loaded
+    setTimeout(() => {
+      preloadImages();
+    }, 100);
+    
+    // Auto-cleanup on page load to prevent memory issues
+    try {
+      const products = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
+      if (products.length > 50) {
+        const limitedProducts = products.slice(-50)
+        localStorage.setItem('ecommerce_products', JSON.stringify(limitedProducts))
+        console.log('🧹 Auto-cleanup: Reduced products from', products.length, 'to', limitedProducts.length)
+      }
+    } catch (error) {
+      console.error('Error during auto-cleanup:', error)
+    }
+
+    setIsLoading(false)
+
+    // Event listener for storage changes
     const handleStorageChange = (e) => {
       if (e.key === 'ecommerce_products') {
-        loadProducts()
+        // Debounce the update to prevent excessive re-renders
+        clearTimeout(window.storageTimeout)
+        window.storageTimeout = setTimeout(() => {
+          loadProducts()
+        }, 500)
       }
     }
-    
+
     window.addEventListener('storage', handleStorageChange)
-    
-    // Load existing categories
-    const savedCategories = JSON.parse(localStorage.getItem('ecommerce_categories') || '[]')
-    if (savedCategories.length > 0) {
-      setCategories(savedCategories)
+
+    // Click outside listener for category dropdown
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.category-selector')) {
+        setShowCategoryDropdown(false)
+      }
     }
-    
-    setIsLoading(false)
-    
-    // Cleanup event listener
+
+    document.addEventListener('mousedown', handleClickOutside)
+
     return () => {
       window.removeEventListener('storage', handleStorageChange)
+      document.removeEventListener('mousedown', handleClickOutside)
+      clearTimeout(window.storageTimeout)
     }
-  }, [navigate])
+      }, [navigate])
+
+  const loadProducts = () => {
+    try {
+      const storedProducts = localStorage.getItem('ecommerce_products')
+      if (storedProducts) {
+        const parsedProducts = JSON.parse(storedProducts)
+        setProducts(parsedProducts)
+      }
+    } catch (error) {
+      console.error('Error loading products:', error)
+      setProducts([])
+    }
+  }
+
+  const loadCategories = () => {
+    try {
+      const storedCategories = localStorage.getItem('ecommerce_categories')
+      if (storedCategories) {
+        const parsedCategories = JSON.parse(storedCategories)
+        setCategories(parsedCategories)
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error)
+    }
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setNewProduct(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target
+    setEditingProduct(prev => ({
       ...prev,
       [name]: value
     }))
@@ -105,135 +212,117 @@ export default function AddProducts({ darkMode = false }) {
       image: newProduct.image,
       description: newProduct.description,
       category: newProduct.category,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      createdBy: `${localStorage.getItem('currentUserEmail') || localStorage.getItem('loggedInUser') || localStorage.getItem('userEmail') || 'Admin'} (Admin)`,
+      isProtected: isProtectedAdmin()
     }
 
     // إضافة المنتج الجديد إلى المنتجات الموجودة
     const updatedProducts = [...products, product]
     setProducts(updatedProducts)
-    localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
     
-    // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
-    window.dispatchEvent(new Event('productsUpdated'))
-    
-    // الاحتفاظ بالبيانات في النموذج بدلاً من مسحها
-    // setNewProduct({
-    //   title: '',
-    //   price: '',
-    //   quantity: 1,
-    //   image: '',
-    //   description: '',
-    //   category: 'electronics'
-    // })
-    // setShowForm(false)
-    
-    setMessage(`✅ Product "${product.title}" with ${product.quantity} pieces added successfully! 
-    
-    📊 Product Details:
-    • Title: ${product.title}
-    • Price: $${product.price}
-    • Quantity: ${product.quantity}
-    • Category: ${product.category}
-    • Total Products: ${updatedProducts.length}
-    
-    💡 Tip: You can add more products without clearing the form!`)
-    
-    // تحديث الإحصائيات تلقائياً
-    if (showStats) {
-      // الإحصائيات ستتحدث تلقائياً لأنها تعتمد على products state
-    }
-    
-    setTimeout(() => setMessage(''), 3000)
-  }
-
-  // Function to delete a product
-  const handleDeleteProduct = (productId) => {
-    const productToDelete = products.find(product => product.id === productId)
-    const updatedProducts = products.filter(product => product.id !== productId)
-    setProducts(updatedProducts)
-    localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
-    
-    // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
-    window.dispatchEvent(new Event('productsUpdated'))
-    
-    setMessage(`Product "${productToDelete.title}" deleted successfully! Remaining products: ${updatedProducts.length}`)
-    setTimeout(() => setMessage(''), 3000)
-  }
-
-  // Function to calculate product statistics
-  const calculateProductStats = () => {
-    const stats = {}
-    
-    products.forEach(product => {
-      if (stats[product.title]) {
-        stats[product.title].count += (product.quantity || 1)
-        stats[product.title].totalPrice += product.price * (product.quantity || 1)
-      } else {
-        stats[product.title] = {
-          count: product.quantity || 1,
-          totalPrice: product.price * (product.quantity || 1),
-          category: product.category,
-          image: product.image
-        }
-      }
-    })
-    
-    return stats
-  }
-
-  const productStats = calculateProductStats()
-
-  // Function to send rejection email
-  const sendRejectionEmail = async (orderId, userEmail, reason = '') => {
+    // تحسين التخزين مع ضغط البيانات
     try {
-      // هنا يمكنك إضافة كود إرسال البريد الإلكتروني الفعلي
-      // مثال باستخدام EmailJS أو أي خدمة بريد إلكتروني أخرى
+      // تحسين البيانات قبل التخزين
+      const optimizedProducts = updatedProducts.map(product => ({
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        quantity: product.quantity,
+        image: product.image,
+        description: product.description,
+        category: product.category,
+        createdAt: product.createdAt
+      }))
       
-      const emailData = {
-        to: userEmail,
-        subject: 'Order Rejection Notification',
-        message: `Dear Customer,\n\nYour order (ID: ${orderId}) has been rejected.\n\nReason: ${reason || 'Order does not meet our requirements'}\n\nIf you have any questions, please contact our support team.\n\nBest regards,\nAdmin Team`
+      // Limit products before saving to prevent memory issues
+      const limitedProducts = optimizedProducts.slice(-50) // Keep only last 50 products
+      const compressedData = JSON.stringify(limitedProducts)
+      localStorage.setItem('ecommerce_products', compressedData)
+      
+      // التحقق من نجاح التخزين
+      const storedData = localStorage.getItem('ecommerce_products')
+      if (!storedData) {
+        throw new Error('Failed to store products')
       }
-
-      // محاكاة إرسال البريد الإلكتروني
-      console.log('Sending rejection email:', emailData)
       
-      // يمكنك استبدال هذا بكود إرسال البريد الفعلي
-      // مثال: await emailjs.send('service_id', 'template_id', emailData)
-      
-      setMessage(`Rejection email sent to ${userEmail}`)
-      setTimeout(() => setMessage(''), 3000)
-      
+      console.log(`✅ Successfully stored ${limitedProducts.length} products in localStorage`)
     } catch (error) {
-      console.error('Error sending email:', error)
-      setMessage('Error sending rejection email')
-      setTimeout(() => setMessage(''), 3000)
+      console.error('Error storing products:', error)
+      setMessage('⚠️ Warning: Product added but storage may be limited. Consider clearing some data.')
+      setTimeout(() => setMessage(''), 5000)
     }
+    
+    // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
+    window.dispatchEvent(new Event('productsUpdated'))
+    
+    setMessage(`✅ Product "${product.title}" with ${product.quantity} pieces added successfully!`)
+    
+    // Clear form and redirect to products page
+    clearForm()
+    setTimeout(() => {
+      setMessage('')
+      // Redirect to products page
+      window.location.href = '/'
+    }, 2000)
   }
 
-  // Function to handle order rejection
-  const handleOrderRejection = async (order) => {
-    setSelectedOrder(order)
-    setShowRejectionForm(true)
-  }
+  const handleEditSubmit = (e) => {
+    e.preventDefault()
+    
+    if (!editingProduct.title || !editingProduct.price || !editingProduct.image || !editingProduct.quantity) {
+      setMessage('Please fill in all required fields')
+      return
+    }
 
-  // Function to confirm rejection and send email
-  const confirmRejection = async () => {
-    if (!selectedOrder) return
+    // Check if trying to edit a protected product
+    if (editingProduct.isProtected && !canModifyProtectedAdmin()) {
+      alert('❌ Cannot edit protected products!\n\nOnly yahiapro400@gmail.com and yahiacool2009@gmail.com can edit protected products.')
+      return
+    }
 
-    await sendRejectionEmail(
-      selectedOrder.id, 
-      selectedOrder.email, 
-      rejectionReason
+    const updatedProduct = {
+      ...editingProduct,
+      price: parseFloat(editingProduct.price),
+      quantity: parseInt(editingProduct.quantity),
+      updatedAt: new Date().toISOString(),
+      updatedBy: `${localStorage.getItem('currentUserEmail') || localStorage.getItem('loggedInUser') || localStorage.getItem('userEmail') || 'Admin'} (Admin)`
+    }
+
+    const updatedProducts = products.map(product => 
+      product.id === editingProduct.id ? updatedProduct : product
     )
-
-    // إزالة الطلب من القائمة (محاكاة)
-    // const updatedOrders = orders.filter(order => order.id !== selectedOrder.id)
-    // setOrders(updatedOrders)
-
-    setShowRejectionForm(false)
-    setRejectionReason('')
-    setSelectedOrder(null)
+    
+    setProducts(updatedProducts)
+    
+    // تحسين التخزين مع ضغط البيانات
+    try {
+      // Limit products before saving to prevent memory issues
+      const limitedProducts = updatedProducts.slice(-50) // Keep only last 50 products
+      const compressedData = JSON.stringify(limitedProducts)
+      localStorage.setItem('ecommerce_products', compressedData)
+      
+      // التحقق من نجاح التخزين
+      const storedData = localStorage.getItem('ecommerce_products')
+      if (!storedData) {
+        throw new Error('Failed to store products')
+      }
+      
+      console.log(`✅ Successfully updated product. ${limitedProducts.length} products in localStorage`)
+    } catch (error) {
+      console.error('Error updating product:', error)
+      setMessage('⚠️ Warning: Product updated but storage may be limited.')
+      setTimeout(() => setMessage(''), 5000)
+    }
+    
+    // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
+    window.dispatchEvent(new Event('productsUpdated'))
+    
+    setMessage(`✅ Product "${updatedProduct.title}" updated successfully!`)
+    setEditingProduct(null)
+    setShowForm(false)
+    
+    setTimeout(() => setMessage(''), 3000)
   }
 
   // Function to clear form manually
@@ -251,6 +340,44 @@ export default function AddProducts({ darkMode = false }) {
   }
 
   // Function to add new category
+  // دالة لحذف كاتجري
+  const handleDeleteCategory = (categoryToDelete) => {
+    if (window.confirm(`Are you sure you want to delete the category "${categoryToDelete}"? This will also remove it from all products.`)) {
+      try {
+        // حذف الكاتجري من قائمة الكاتجري
+        const updatedCategories = categories.filter(cat => cat !== categoryToDelete)
+        setCategories(updatedCategories)
+        localStorage.setItem('ecommerce_categories', JSON.stringify(updatedCategories))
+        
+        // تحديث المنتجات التي تستخدم هذه الكاتجري
+        const updatedProducts = products.map(product => {
+          if (product.category === categoryToDelete) {
+            return {
+              ...product,
+              category: 'Other' // تعيين كاتجري افتراضية
+            }
+          }
+          return product
+        })
+        
+        setProducts(updatedProducts)
+        localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
+        
+        // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
+        window.dispatchEvent(new Event('productsUpdated'))
+        
+        setMessage(`✅ Category "${categoryToDelete}" deleted successfully! Products moved to "Other" category.`)
+        setTimeout(() => setMessage(''), 4000)
+        
+        console.log(`✅ Category "${categoryToDelete}" deleted and products updated`)
+      } catch (error) {
+        console.error('Error deleting category:', error)
+        setMessage('⚠️ Error deleting category')
+        setTimeout(() => setMessage(''), 3000)
+      }
+    }
+  }
+
   const handleAddCategory = (e) => {
     e.preventDefault()
     
@@ -276,7 +403,6 @@ export default function AddProducts({ darkMode = false }) {
     
     setTimeout(() => setMessage(''), 3000)
   }
-
 
   if (isLoading) {
     return (
@@ -306,7 +432,13 @@ export default function AddProducts({ darkMode = false }) {
     )
   }
 
-  if (!user) {
+  // Allow access if no users exist (first time setup) or if user is logged in
+  const currentUserEmail = localStorage.getItem('currentUserEmail') || 
+                          localStorage.getItem('loggedInUser') || 
+                          localStorage.getItem('userEmail')
+  const users = JSON.parse(localStorage.getItem('users') || '[]')
+  
+  if (!currentUserEmail && users.length > 0) {
     return (
       <div className="access-denied">
         <h1>Access Denied</h1>
@@ -320,7 +452,7 @@ export default function AddProducts({ darkMode = false }) {
     <div className={`add-products-container ${darkMode ? 'dark-mode' : ''}`}>
       <div className="add-products-header">
         <h1>Product Management</h1>
-        <p>Add new products and manage existing ones</p>
+        <p>Add, edit, and manage your products</p>
       </div>
 
       {message && (
@@ -330,35 +462,56 @@ export default function AddProducts({ darkMode = false }) {
       )}
 
       <div className="admin-actions">
-        <button 
-          className="add-product-btn"
-          onClick={() => setShowForm(!showForm)}
+        {!showCategoriesSection && (
+          <>
+            <button 
+              className="add-product-btn"
+              onClick={() => {
+                setShowForm(!showForm)
+                setEditingProduct(null)
+              }}
+            >
+              {showForm ? 'Cancel' : 'Add New Product'}
+            </button>
+
+          </>
+        )}
+        <button // Categories Management button
+          className="categories-management-btn"
+          onClick={() => {
+            setShowCategoriesSection(!showCategoriesSection)
+            if (!showCategoriesSection) {
+              // Scroll to categories section when showing
+              setTimeout(() => {
+                const categoriesSection = document.querySelector('.categories-section')
+                if (categoriesSection) {
+                  categoriesSection.scrollIntoView({ behavior: 'smooth' })
+                }
+              }, 100)
+            }
+          }}
+          title="Manage product categories"
         >
-          {showForm ? 'Cancel' : 'Add New Product'}
-        </button>
-        <button 
-          className="stats-btn"
-          onClick={() => setShowStats(!showStats)}
-        >
-          {showStats ? '📊 Hide Statistics' : '📊 Show Statistics'}
+          {showCategoriesSection ? '⬆️ Back to Top' : '📂 Categories'}
         </button>
       </div>
 
-      {showForm && (
+      {/* Product Form */}
+      {showForm && !showCategoriesSection && (
         <div className="product-form-container">
-          <form className="product-form" onSubmit={handleSubmit}>
-            <h3>Add New Product</h3>
-            
+          <h2>{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
+          
+          <form onSubmit={editingProduct ? handleEditSubmit : handleSubmit} className="product-form">
             <div className="form-group">
               <label htmlFor="title">Product Title *</label>
               <input
                 type="text"
                 id="title"
                 name="title"
-                value={newProduct.title}
-                onChange={handleInputChange}
-                required
+                value={editingProduct ? editingProduct.title : newProduct.title}
+                onChange={editingProduct ? handleEditInputChange : handleInputChange}
                 placeholder="Enter product title"
+                required
               />
             </div>
 
@@ -369,12 +522,12 @@ export default function AddProducts({ darkMode = false }) {
                   type="number"
                   id="price"
                   name="price"
-                  value={newProduct.price}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  step="0.01"
+                  value={editingProduct ? editingProduct.price : newProduct.price}
+                  onChange={editingProduct ? handleEditInputChange : handleInputChange}
                   placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  required
                 />
               </div>
 
@@ -384,98 +537,83 @@ export default function AddProducts({ darkMode = false }) {
                   type="number"
                   id="quantity"
                   name="quantity"
-                  value={newProduct.quantity}
-                  onChange={handleInputChange}
-                  required
-                  min="1"
-                  step="1"
+                  value={editingProduct ? editingProduct.quantity : newProduct.quantity}
+                  onChange={editingProduct ? handleEditInputChange : handleInputChange}
                   placeholder="1"
+                  min="1"
+                  required
                 />
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="category">Category</label>
-                <select
-                  id="category"
-                  name="category"
-                  value={newProduct.category}
-                  onChange={handleInputChange}
+            <div className="form-group">
+              <label htmlFor="category">Category *</label>
+              <div className="category-selector">
+                <button
+                  type="button"
+                  className="category-dropdown-btn"
+                  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
                 >
-                  {categories.map(category => (
-                    <option key={category} value={category}>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Selected Category</label>
-                <div className="category-display">
-                  <span className="category-badge">{newProduct.category}</span>
-                </div>
+                  {editingProduct ? editingProduct.category : newProduct.category}
+                  <span className="dropdown-arrow">▼</span>
+                </button>
+                {showCategoryDropdown && (
+                  <div className="category-dropdown">
+                    {categories.map(category => (
+                      <div
+                        key={category}
+                        className="category-option"
+                        onClick={() => {
+                          if (editingProduct) {
+                            setEditingProduct(prev => ({ ...prev, category }))
+                          } else {
+                            setNewProduct(prev => ({ ...prev, category }))
+                          }
+                          setShowCategoryDropdown(false)
+                        }}
+                      >
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-
-            <div className="category-actions">
-              <button 
-                type="button"
-                className="add-category-btn"
-                onClick={() => setShowCategoryForm(!showCategoryForm)}
-              >
-                {showCategoryForm ? 'Cancel' : '➕ Add New Category'}
-              </button>
-            </div>
-
-            {showCategoryForm && (
-              <div className="category-form">
-                <h4>Add New Category</h4>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="newCategory">Category Name</label>
-                    <input
-                      type="text"
-                      id="newCategory"
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      placeholder="Enter category name"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>&nbsp;</label>
-                    <button 
-                      type="button"
-                      className="submit-category-btn"
-                      onClick={handleAddCategory}
-                    >
-                      Add Category
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div className="form-group">
               <label htmlFor="image">Product Image *</label>
               <div className="image-upload-container">
                 <input
+                  type="text"
+                  id="image"
+                  name="image"
+                  value={editingProduct ? editingProduct.image : newProduct.image}
+                  onChange={editingProduct ? handleEditInputChange : handleInputChange}
+                  placeholder="Enter image URL (supports: jpg, png, webp, gif)"
+                  required
+                />
+                <input
                   type="file"
                   id="imageFile"
                   accept="image/*"
                   onChange={(e) => {
-                    const file = e.target.files[0];
+                    const file = e.target.files[0]
                     if (file) {
-                      const reader = new FileReader();
+                      const reader = new FileReader()
                       reader.onload = (e) => {
-                        setNewProduct(prev => ({
-                          ...prev,
-                          image: e.target.result
-                        }));
-                      };
-                      reader.readAsDataURL(file);
+                        if (editingProduct) {
+                          setEditingProduct(prev => ({
+                            ...prev,
+                            image: e.target.result
+                          }))
+                        } else {
+                          setNewProduct(prev => ({
+                            ...prev,
+                            image: e.target.result
+                          }))
+                        }
+                      }
+                      reader.readAsDataURL(file)
                     }
                   }}
                   className="file-input"
@@ -488,13 +626,31 @@ export default function AddProducts({ darkMode = false }) {
                   </svg>
                   Choose Image
                 </label>
-                {newProduct.image && (
+                {(editingProduct ? editingProduct.image : newProduct.image) && (
                   <div className="image-preview">
-                    <img src={newProduct.image} alt="Preview" />
+                    <img 
+                      src={editingProduct ? editingProduct.image : newProduct.image} 
+                      alt="Preview" 
+                      loading="eager"
+                      decoding="async"
+                      onLoad={(e) => {
+                        e.target.style.opacity = '1';
+                      }}
+                      style={{
+                        opacity: 0,
+                        transition: 'opacity 0.3s ease'
+                      }}
+                    />
                     <button 
                       type="button" 
                       className="remove-image"
-                      onClick={() => setNewProduct(prev => ({ ...prev, image: '' }))}
+                      onClick={() => {
+                        if (editingProduct) {
+                          setEditingProduct(prev => ({ ...prev, image: '' }))
+                        } else {
+                          setNewProduct(prev => ({ ...prev, image: '' }))
+                        }
+                      }}
                     >
                       ×
                     </button>
@@ -508,8 +664,8 @@ export default function AddProducts({ darkMode = false }) {
               <textarea
                 id="description"
                 name="description"
-                value={newProduct.description}
-                onChange={handleInputChange}
+                value={editingProduct ? editingProduct.description : newProduct.description}
+                onChange={editingProduct ? handleEditInputChange : handleInputChange}
                 rows="4"
                 placeholder="Enter product description"
               />
@@ -517,19 +673,16 @@ export default function AddProducts({ darkMode = false }) {
 
             <div className="form-actions">
               <button type="submit" className="submit-btn">
-                Add Product
+                {editingProduct ? 'Update Product' : 'Add Product'}
               </button>
-              <button 
-                type="button" 
-                className="clear-btn"
-                onClick={clearForm}
-              >
-                Clear Form
-              </button>
+
               <button 
                 type="button" 
                 className="cancel-btn"
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  setShowForm(false)
+                  setEditingProduct(null)
+                }}
               >
                 Cancel
               </button>
@@ -538,58 +691,157 @@ export default function AddProducts({ darkMode = false }) {
         </div>
       )}
 
-      {showStats && (
-        <div className="stats-section">
-          <h2>Product Statistics</h2>
-          <div className="stats-summary">
-            <div className="summary-item">
-              <span className="summary-label">Total Products:</span>
-              <span className="summary-value">{products.length}</span>
-            </div>
-            <div className="summary-item">
-              <span className="summary-label">Total Pieces:</span>
-              <span className="summary-value">{products.reduce((sum, product) => sum + (product.quantity || 1), 0)}</span>
-            </div>
-            <div className="summary-item">
-              <span className="summary-label">Unique Products:</span>
-              <span className="summary-value">{Object.keys(productStats).length}</span>
-            </div>
-            <div className="summary-item">
-              <span className="summary-label">Total Value:</span>
-              <span className="summary-value">${products.reduce((sum, product) => sum + (product.price * (product.quantity || 1)), 0).toFixed(2)}</span>
-            </div>
+      {/* Products Display Section */}
+      {!showCategoriesSection && (
+        <div className="products-section">
+          <div className="products-header">
+            <h2>Products Management ({products.length})</h2>
           </div>
-          {Object.keys(productStats).length === 0 ? (
-            <div className="no-stats">
-              <p>No products to show statistics for.</p>
+          
+          {products.length === 0 ? (
+            <div className="no-products">
+              <p>No products added yet.</p>
             </div>
           ) : (
-            <div className="stats-grid">
-              {Object.entries(productStats).map(([productName, stats]) => (
-                <div key={productName} className="stat-card">
-                  <div className="stat-image">
-                    <img src={stats.image} alt={productName} />
-                  </div>
-                  <div className="stat-info">
-                    <h3>{productName}</h3>
-                    <div className="stat-details">
-                      <div className="stat-item">
-                        <span className="stat-label">Quantity:</span>
-                        <span className="stat-value">{stats.count}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Total Value:</span>
-                        <span className="stat-value">${stats.totalPrice.toFixed(2)}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Category:</span>
-                        <span className="stat-value">{stats.category}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Average Price:</span>
-                        <span className="stat-value">${(stats.totalPrice / stats.count).toFixed(2)}</span>
-                      </div>
+            <div className="products-grid">
+              {products.map(product => (
+                <div key={product.id} className="product-card">
+                  <div className="product-image">
+                    <img 
+                      src={product.image} 
+                      alt={product.title} 
+                      loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
+                      onLoad={(e) => {
+                        e.target.style.opacity = '1';
+                        e.target.style.transform = 'scale(1)';
+                      }}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                      style={{
+                        opacity: 0,
+                        transform: 'scale(0.95)',
+                        transition: 'all 0.3s ease'
+                      }}
+                    />
+                    <div className="image-placeholder" style={{ display: 'none' }}>
+                      <span>📷</span>
+                      <p>No Image</p>
                     </div>
+                    
+                    {/* Stock Status Overlay */}
+                    <div className="stock-status-overlay">
+                      {product.quantity === 0 ? (
+                        <span className="out-of-stock-overlay">
+                          <span className="stock-icon">❌</span>
+                          <span className="stock-text">Out of Stock</span>
+                        </span>
+                      ) : product.quantity <= 5 ? (
+                        <span className="low-stock-overlay">
+                          <span className="stock-icon">⚠️</span>
+                          <span className="stock-text">Low Stock</span>
+                        </span>
+                      ) : (
+                        <span className="in-stock-overlay">
+                          <span className="stock-icon">✅</span>
+                          <span className="stock-text">In Stock</span>
+                        </span>
+                      )}
+                    </div>
+                    
+                    {product.updatedAt && (
+                      <div className="updated-badge">Updated</div>
+                    )}
+                    {product.isProtected && (
+                      <div className="protected-badge">🔒 Protected</div>
+                    )}
+                  </div>
+                  <div className="product-info">
+                    <h3>{product.title}</h3>
+                    <p className="price">${product.price}</p>
+                    <p className="quantity">Quantity: {product.quantity || 1}</p>
+
+                    <p className="category">{product.category}</p>
+                    {product.description && (
+                      <p className="description">{product.description}</p>
+                    )}
+                    <p className="product-id">ID: {product.id}</p>
+                    <p className="created-date">
+                      Created: {new Date(product.createdAt).toLocaleDateString()}
+                      {product.createdBy && ` by ${product.createdBy}`}
+                    </p>
+                    {product.updatedAt && (
+                      <p className="updated-date">
+                        Updated: {new Date(product.updatedAt).toLocaleDateString()}
+                        {product.updatedBy && ` by ${product.updatedBy}`}
+                      </p>
+                    )}
+                    {product.isProtected && (
+                      <p className="protected-info">
+                        🔒 Protected Product - Only yahiapro400@gmail.com and yahiacool2009@gmail.com can modify
+                      </p>
+                    )}
+                  </div>
+                  <div className="product-actions">
+                    <button 
+                      className="edit-btn"
+                      onClick={() => {
+                        setEditingProduct({
+                          ...product,
+                          price: product.price.toString(),
+                          quantity: product.quantity.toString()
+                        })
+                        setShowForm(true)
+                      }}
+                      title="Edit Product"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button 
+                      className="delete-btn"
+                      onClick={() => {
+                        const productToDelete = products.find(p => p.id === product.id)
+                        
+                        // Check if trying to delete a protected product
+                        if (productToDelete && productToDelete.isProtected && !canModifyProtectedAdmin()) {
+                          alert('❌ Cannot delete protected products!\n\nOnly yahiapro400@gmail.com and yahiacool2009@gmail.com can delete protected products.')
+                          return
+                        }
+                        
+                        if (window.confirm('Are you sure you want to delete this product?')) {
+                          const updatedProducts = products.filter(p => p.id !== product.id)
+                          setProducts(updatedProducts)
+                          
+                          try {
+                            const limitedProducts = updatedProducts.slice(-50)
+                            const compressedData = JSON.stringify(limitedProducts)
+                            localStorage.setItem('ecommerce_products', compressedData)
+                            
+                            const storedData = localStorage.getItem('ecommerce_products')
+                            if (!storedData) {
+                              throw new Error('Failed to store products')
+                            }
+                            
+                            console.log(`✅ Successfully deleted product. ${limitedProducts.length} products remaining in localStorage`)
+                          } catch (error) {
+                            console.error('Error deleting product:', error)
+                            setMessage('⚠️ Warning: Product deleted but storage may be limited.')
+                            setTimeout(() => setMessage(''), 5000)
+                          }
+                          
+                          window.dispatchEvent(new Event('productsUpdated'))
+                          
+                          setMessage(`Product "${productToDelete.title}" deleted successfully! Remaining products: ${updatedProducts.length}`)
+                          setTimeout(() => setMessage(''), 3000)
+                        }
+                      }}
+                      title="Delete Product"
+                    >
+                      🗑️ Delete
+                    </button>
                   </div>
                 </div>
               ))}
@@ -598,84 +850,70 @@ export default function AddProducts({ darkMode = false }) {
         </div>
       )}
 
-      <div className="products-section">
-        <h2>Existing Products ({products.length})</h2>
-        
-        {products.length === 0 ? (
-          <div className="no-products">
-            <p>No products added yet.</p>
-          </div>
-        ) : (
-          <div className="products-grid">
-            {products.map(product => (
-              <div key={product.id} className="product-card">
-                <img src={product.image} alt={product.title} />
-                <div className="product-info">
-                  <h3>{product.title}</h3>
-                  <p className="price">${product.price}</p>
-                  <p className="quantity">Quantity: {product.quantity || 1}</p>
-                  <p className="category">{product.category}</p>
-                  {product.description && (
-                    <p className="description">{product.description}</p>
-                  )}
-                  <p className="product-id">ID: {product.id}</p>
-                </div>
-                <div className="product-actions">
-                  <button 
-                    className="delete-btn"
-                    onClick={() => handleDeleteProduct(product.id)}
-                    title="Delete Product"
-                  >
-                    🗑️ Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Rejection Form Modal */}
-      {showRejectionForm && (
-        <div className="rejection-modal">
-          <div className="rejection-form">
-            <h3>Reject Order</h3>
-            <p>Order ID: {selectedOrder?.id}</p>
-            <p>Customer Email: {selectedOrder?.email}</p>
-            
-            <div className="form-group">
-              <label htmlFor="rejectionReason">Rejection Reason</label>
-              <textarea
-                id="rejectionReason"
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Enter rejection reason..."
-                rows="4"
-              />
-            </div>
-
-            <div className="rejection-actions">
-              <button 
-                className="confirm-rejection-btn"
-                onClick={confirmRejection}
-              >
-                Send Rejection Email
-              </button>
-              <button 
-                className="cancel-rejection-btn"
-                onClick={() => {
-                  setShowRejectionForm(false)
-                  setRejectionReason('')
-                  setSelectedOrder(null)
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+      {/* Categories Management Section */}
+      {showCategoriesSection && (
+        <div className="categories-section">
+        <div className="categories-header">
+          <h2>Categories Management ({categories.length})</h2>
+          <div className="categories-actions">
+            <button 
+              className="add-category-btn"
+              onClick={() => setShowCategoryForm(!showCategoryForm)}
+            >
+              {showCategoryForm ? 'Cancel' : '➕ Add New Category'}
+            </button>
+            <button 
+              className="back-to-top-btn"
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+            >
+              ⬆️ Back to Top
+            </button>
           </div>
         </div>
-      )}
 
+        {showCategoryForm && (
+          <div className="category-form">
+            <form onSubmit={handleAddCategory}>
+              <div className="form-group">
+                <label htmlFor="newCategory">Category Name</label>
+                <input
+                  type="text"
+                  id="newCategory"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder="Enter category name"
+                  required
+                />
+              </div>
+              <button type="submit" className="submit-btn">Add Category</button>
+            </form>
+          </div>
+        )}
+
+        <div className="categories-grid">
+          {categories.map(category => (
+            <div key={category} className="category-card">
+              <div className="category-info">
+                <h3>{category.charAt(0).toUpperCase() + category.slice(1)}</h3>
+                <p>Products in this category: {products.filter(p => p.category === category).length}</p>
+              </div>
+              <div className="category-actions">
+                <button 
+                  className="delete-category-btn"
+                  onClick={() => handleDeleteCategory(category)}
+                  disabled={category === 'other'}
+                  title={category === 'other' ? 'Cannot delete default category' : 'Delete category'}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      )}
     </div>
   )
 } 
