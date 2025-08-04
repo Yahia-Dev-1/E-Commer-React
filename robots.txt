@@ -1,3 +1,21 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap
+Sitemap: https://yahia-dev-1.github.io/E-Commer-React/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Disallow admin pages
+Disallow: /admin
+Disallow: /add-products
+
+# Allow important pages
+Allow: /
+Allow: /about
+Allow: /services
+Allow: /cart
+Allow: /login
+Allow: /orders
