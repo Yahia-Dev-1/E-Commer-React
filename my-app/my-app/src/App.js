@@ -62,11 +62,33 @@ function AppContent() {
   // Load products function
   const loadProducts = () => {
     try {
-      // Try multiple possible keys for products
-      const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || 
-                                    localStorage.getItem('products') || '[]')
-      console.log('🔍 App.js: Raw products from localStorage:', savedProducts)
+      // محاولة تحميل من localStorage أولاً
+      let savedProducts = []
       
+      try {
+        const localStorageData = localStorage.getItem('ecommerce_products')
+        if (localStorageData) {
+          savedProducts = JSON.parse(localStorageData)
+          console.log('🔍 App.js: Raw products from localStorage:', savedProducts)
+        }
+      } catch (localStorageError) {
+        console.warn('localStorage error, trying sessionStorage:', localStorageError)
+      }
+      
+      // إذا لم توجد بيانات في localStorage، جرب sessionStorage
+      if (!savedProducts || savedProducts.length === 0) {
+        try {
+          const sessionStorageData = sessionStorage.getItem('ecommerce_products_fallback')
+          if (sessionStorageData) {
+            savedProducts = JSON.parse(sessionStorageData)
+            console.log('🔍 App.js: Raw products from sessionStorage fallback:', savedProducts)
+          }
+        } catch (sessionStorageError) {
+          console.warn('sessionStorage error:', sessionStorageError)
+        }
+      }
+      
+      // فلترة المنتجات الصحيحة
       const validProducts = savedProducts.filter(product => 
         product && 
         product.id && 
@@ -82,6 +104,18 @@ function AppContent() {
       
       setProducts(validProducts)
       console.log(`📦 App.js: Loaded ${validProducts.length} products`)
+      
+      // إذا تم تحميل من sessionStorage، حاول نقل البيانات إلى localStorage
+      if (validProducts.length > 0 && sessionStorage.getItem('ecommerce_products_fallback')) {
+        try {
+          localStorage.setItem('ecommerce_products', JSON.stringify(validProducts))
+          sessionStorage.removeItem('ecommerce_products_fallback')
+          console.log('✅ Successfully migrated products from sessionStorage to localStorage')
+        } catch (migrationError) {
+          console.warn('Failed to migrate from sessionStorage:', migrationError)
+        }
+      }
+      
     } catch (error) {
       console.error('Error loading products in App.js:', error)
       setProducts([])
@@ -261,9 +295,7 @@ function AppContent() {
   // دالة للتحقق من الكمية المتاحة
   const checkAvailableQuantity = (productId) => {
     try {
-      // Try multiple possible keys for products
-      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || 
-                                       localStorage.getItem('products') || '[]')
+      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
       const product = existingProducts.find(p => p.id === productId)
       
       // إذا لم نجد المنتج في localStorage، نستخدم الكمية الافتراضية
@@ -456,8 +488,7 @@ function AppContent() {
   const updateProductQuantities = (purchasedItems) => {
     try {
       // جلب المنتجات الحالية من localStorage
-      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || 
-                                       localStorage.getItem('products') || '[]')
+      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
       
       // قائمة المنتجات التي نفدت مخزونها
       const outOfStockProducts = []
@@ -484,9 +515,6 @@ function AppContent() {
       
       // حفظ المنتجات المحدثة
       localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
-      
-      // Also save to the old key for backward compatibility
-      localStorage.setItem('products', JSON.stringify(updatedProducts))
       
       // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
       window.dispatchEvent(new Event('productsUpdated'))

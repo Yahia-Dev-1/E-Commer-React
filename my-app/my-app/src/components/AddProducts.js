@@ -63,7 +63,7 @@ export default function AddProducts({ darkMode = false }) {
     
     // If no user email found, check if there are any users in localStorage
     if (!currentUserEmail) {
-      const users = JSON.parse(localStorage.getItem('ecommerce_users') || '[]')
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
       if (users.length === 0) {
         // If no users exist, allow access (first time setup)
         setUser({ email: 'admin@gmail.com' })
@@ -78,7 +78,7 @@ export default function AddProducts({ darkMode = false }) {
     }
 
     // Get user data
-    const users = JSON.parse(localStorage.getItem('ecommerce_users') || '[]')
+    const users = JSON.parse(localStorage.getItem('users') || '[]')
     const currentUser = users.find(u => u.email === currentUserEmail)
     
     if (!currentUser) {
@@ -124,6 +124,9 @@ export default function AddProducts({ darkMode = false }) {
       console.error('Error during auto-cleanup:', error)
     }
 
+    // تنظيف التخزين لمنع مشاكل الذاكرة
+    cleanupStorage()
+    
     setIsLoading(false)
 
     // Event listener for storage changes
@@ -157,13 +160,10 @@ export default function AddProducts({ darkMode = false }) {
 
   const loadProducts = () => {
     try {
-      // Try multiple possible keys for products
-      const storedProducts = localStorage.getItem('ecommerce_products') || 
-                           localStorage.getItem('products')
+      const storedProducts = localStorage.getItem('ecommerce_products')
       if (storedProducts) {
         const parsedProducts = JSON.parse(storedProducts)
         setProducts(parsedProducts)
-        console.log('🔍 AddProducts.js: Loaded products:', parsedProducts.length)
       }
     } catch (error) {
       console.error('Error loading products:', error)
@@ -180,6 +180,38 @@ export default function AddProducts({ darkMode = false }) {
       }
     } catch (error) {
       console.error('Error loading categories:', error)
+    }
+  }
+
+  // دالة لتنظيف التخزين
+  const cleanupStorage = () => {
+    try {
+      // تنظيف البيانات القديمة
+      const keysToClean = [
+        'ecommerce_products_old',
+        'ecommerce_categories_old',
+        'cartItems_old',
+        'users_old'
+      ]
+      
+      keysToClean.forEach(key => {
+        try {
+          localStorage.removeItem(key)
+        } catch (e) {
+          console.warn(`Failed to remove ${key}:`, e)
+        }
+      })
+      
+      // تنظيف sessionStorage
+      try {
+        sessionStorage.clear()
+      } catch (e) {
+        console.warn('Failed to clear sessionStorage:', e)
+      }
+      
+      console.log('✅ Storage cleanup completed')
+    } catch (error) {
+      console.error('Error during storage cleanup:', error)
     }
   }
 
@@ -241,10 +273,22 @@ export default function AddProducts({ darkMode = false }) {
       // Limit products before saving to prevent memory issues
       const limitedProducts = optimizedProducts.slice(-50) // Keep only last 50 products
       const compressedData = JSON.stringify(limitedProducts)
-      localStorage.setItem('ecommerce_products', compressedData)
       
-      // Also save to the old key for backward compatibility
-      localStorage.setItem('products', compressedData)
+      // محاولة التخزين مع معالجة الأخطاء
+      try {
+        localStorage.setItem('ecommerce_products', compressedData)
+      } catch (storageError) {
+        console.warn('Storage error, trying to clear old data:', storageError)
+        
+        // محاولة تنظيف التخزين وإعادة المحاولة
+        try {
+          localStorage.removeItem('ecommerce_products')
+          localStorage.setItem('ecommerce_products', compressedData)
+        } catch (retryError) {
+          console.error('Failed to store even after cleanup:', retryError)
+          throw new Error('Storage is full or not available')
+        }
+      }
       
       // التحقق من نجاح التخزين
       const storedData = localStorage.getItem('ecommerce_products')
@@ -253,10 +297,28 @@ export default function AddProducts({ darkMode = false }) {
       }
       
       console.log(`✅ Successfully stored ${limitedProducts.length} products in localStorage`)
+      
+      // إضافة تأكيد إضافي للتخزين
+      const verificationData = JSON.parse(storedData)
+      if (verificationData.length !== limitedProducts.length) {
+        console.warn('Storage verification failed, data may be corrupted')
+      }
+      
     } catch (error) {
       console.error('Error storing products:', error)
-      setMessage('⚠️ Warning: Product added but storage may be limited. Consider clearing some data.')
-      setTimeout(() => setMessage(''), 5000)
+      
+      // محاولة حفظ في sessionStorage كبديل
+      try {
+        const fallbackData = JSON.stringify(updatedProducts.slice(-20))
+        sessionStorage.setItem('ecommerce_products_fallback', fallbackData)
+        console.log('✅ Saved to sessionStorage as fallback')
+        setMessage('⚠️ Warning: Product added to temporary storage. Data may be lost on page refresh.')
+      } catch (fallbackError) {
+        console.error('Fallback storage also failed:', fallbackError)
+        setMessage('❌ Error: Unable to save product. Please try again or clear browser data.')
+      }
+      
+      setTimeout(() => setMessage(''), 8000)
     }
     
     // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
@@ -306,10 +368,22 @@ export default function AddProducts({ darkMode = false }) {
       // Limit products before saving to prevent memory issues
       const limitedProducts = updatedProducts.slice(-50) // Keep only last 50 products
       const compressedData = JSON.stringify(limitedProducts)
-      localStorage.setItem('ecommerce_products', compressedData)
       
-      // Also save to the old key for backward compatibility
-      localStorage.setItem('products', compressedData)
+      // محاولة التخزين مع معالجة الأخطاء
+      try {
+        localStorage.setItem('ecommerce_products', compressedData)
+      } catch (storageError) {
+        console.warn('Storage error during edit, trying to clear old data:', storageError)
+        
+        // محاولة تنظيف التخزين وإعادة المحاولة
+        try {
+          localStorage.removeItem('ecommerce_products')
+          localStorage.setItem('ecommerce_products', compressedData)
+        } catch (retryError) {
+          console.error('Failed to store even after cleanup:', retryError)
+          throw new Error('Storage is full or not available')
+        }
+      }
       
       // التحقق من نجاح التخزين
       const storedData = localStorage.getItem('ecommerce_products')
@@ -318,10 +392,28 @@ export default function AddProducts({ darkMode = false }) {
       }
       
       console.log(`✅ Successfully updated product. ${limitedProducts.length} products in localStorage`)
+      
+      // إضافة تأكيد إضافي للتخزين
+      const verificationData = JSON.parse(storedData)
+      if (verificationData.length !== limitedProducts.length) {
+        console.warn('Storage verification failed during edit, data may be corrupted')
+      }
+      
     } catch (error) {
       console.error('Error updating product:', error)
-      setMessage('⚠️ Warning: Product updated but storage may be limited.')
-      setTimeout(() => setMessage(''), 5000)
+      
+      // محاولة حفظ في sessionStorage كبديل
+      try {
+        const fallbackData = JSON.stringify(updatedProducts.slice(-20))
+        sessionStorage.setItem('ecommerce_products_fallback', fallbackData)
+        console.log('✅ Saved to sessionStorage as fallback during edit')
+        setMessage('⚠️ Warning: Product updated in temporary storage. Data may be lost on page refresh.')
+      } catch (fallbackError) {
+        console.error('Fallback storage also failed during edit:', fallbackError)
+        setMessage('❌ Error: Unable to update product. Please try again or clear browser data.')
+      }
+      
+      setTimeout(() => setMessage(''), 8000)
     }
     
     // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
@@ -371,9 +463,6 @@ export default function AddProducts({ darkMode = false }) {
         
         setProducts(updatedProducts)
         localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
-        
-        // Also save to the old key for backward compatibility
-        localStorage.setItem('products', JSON.stringify(updatedProducts))
         
         // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
         window.dispatchEvent(new Event('productsUpdated'))
@@ -831,9 +920,6 @@ export default function AddProducts({ darkMode = false }) {
                             const limitedProducts = updatedProducts.slice(-50)
                             const compressedData = JSON.stringify(limitedProducts)
                             localStorage.setItem('ecommerce_products', compressedData)
-                            
-                            // Also save to the old key for backward compatibility
-                            localStorage.setItem('products', compressedData)
                             
                             const storedData = localStorage.getItem('ecommerce_products')
                             if (!storedData) {
