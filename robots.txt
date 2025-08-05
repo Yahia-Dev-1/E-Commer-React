@@ -1,21 +1,82 @@
-# https://www.robotstxt.org/robotstxt.html
+# Robots.txt for Yahia Store
+# Enhanced SEO configuration
+
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://yahia-dev-1.github.io/E-Commer-React/sitemap.xml
+# Allow all search engines to crawl the site
+User-agent: Googlebot
+Allow: /
 
-# Crawl-delay
-Crawl-delay: 1
+User-agent: Bingbot
+Allow: /
 
-# Disallow admin pages
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+# Disallow admin and private areas
 Disallow: /admin
+Disallow: /admin/
 Disallow: /add-products
+Disallow: /add-products/
+Disallow: /private/
+Disallow: /api/
+Disallow: /_api/
+Disallow: /admin-panel/
+Disallow: /dashboard/
+Disallow: /management/
+
+# Disallow temporary and cache files
+Disallow: /temp/
+Disallow: /cache/
+Disallow: /tmp/
+Disallow: /.git/
+Disallow: /.env
+Disallow: /config/
+Disallow: /logs/
+
+# Disallow search results and filters (optional - remove if you want them indexed)
+Disallow: /search?
+Disallow: /filter?
+Disallow: /sort?
+Disallow: /page=
 
 # Allow important pages
-Allow: /
 Allow: /about
 Allow: /services
-Allow: /cart
-Allow: /login
-Allow: /orders
+Allow: /contact
+Allow: /help
+Allow: /privacy
+Allow: /terms
+Allow: /blog
+Allow: /offers
+Allow: /sale
+Allow: /new-arrivals
+Allow: /best-sellers
+Allow: /category/
+Allow: /product/
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://yahia-dev-1.github.io/E-Commer-React/sitemap.xml
+
+# Additional sitemaps (if you have them)
+Sitemap: https://yahia-dev-1.github.io/E-Commer-React/sitemap-products.xml
+Sitemap: https://yahia-dev-1.github.io/E-Commer-React/sitemap-categories.xml
+
+# Host directive for canonical domain
+Host: https://yahia-dev-1.github.io
+
+# Contact information for webmasters
+# Contact: info@yahia-store.com
