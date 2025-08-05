@@ -62,7 +62,9 @@ function AppContent() {
   // Load products function
   const loadProducts = () => {
     try {
-      const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
+      // Try multiple possible keys for products
+      const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || 
+                                    localStorage.getItem('products') || '[]')
       console.log('🔍 App.js: Raw products from localStorage:', savedProducts)
       
       const validProducts = savedProducts.filter(product => 
@@ -259,7 +261,9 @@ function AppContent() {
   // دالة للتحقق من الكمية المتاحة
   const checkAvailableQuantity = (productId) => {
     try {
-      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
+      // Try multiple possible keys for products
+      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || 
+                                       localStorage.getItem('products') || '[]')
       const product = existingProducts.find(p => p.id === productId)
       
       // إذا لم نجد المنتج في localStorage، نستخدم الكمية الافتراضية
@@ -452,7 +456,8 @@ function AppContent() {
   const updateProductQuantities = (purchasedItems) => {
     try {
       // جلب المنتجات الحالية من localStorage
-      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
+      const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || 
+                                       localStorage.getItem('products') || '[]')
       
       // قائمة المنتجات التي نفدت مخزونها
       const outOfStockProducts = []
@@ -479,6 +484,9 @@ function AppContent() {
       
       // حفظ المنتجات المحدثة
       localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
+      
+      // Also save to the old key for backward compatibility
+      localStorage.setItem('products', JSON.stringify(updatedProducts))
       
       // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
       window.dispatchEvent(new Event('productsUpdated'))

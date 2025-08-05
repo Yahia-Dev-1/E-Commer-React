@@ -63,7 +63,7 @@ export default function AddProducts({ darkMode = false }) {
     
     // If no user email found, check if there are any users in localStorage
     if (!currentUserEmail) {
-      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      const users = JSON.parse(localStorage.getItem('ecommerce_users') || '[]')
       if (users.length === 0) {
         // If no users exist, allow access (first time setup)
         setUser({ email: 'admin@gmail.com' })
@@ -78,7 +78,7 @@ export default function AddProducts({ darkMode = false }) {
     }
 
     // Get user data
-    const users = JSON.parse(localStorage.getItem('users') || '[]')
+    const users = JSON.parse(localStorage.getItem('ecommerce_users') || '[]')
     const currentUser = users.find(u => u.email === currentUserEmail)
     
     if (!currentUser) {
@@ -157,10 +157,13 @@ export default function AddProducts({ darkMode = false }) {
 
   const loadProducts = () => {
     try {
-      const storedProducts = localStorage.getItem('ecommerce_products')
+      // Try multiple possible keys for products
+      const storedProducts = localStorage.getItem('ecommerce_products') || 
+                           localStorage.getItem('products')
       if (storedProducts) {
         const parsedProducts = JSON.parse(storedProducts)
         setProducts(parsedProducts)
+        console.log('🔍 AddProducts.js: Loaded products:', parsedProducts.length)
       }
     } catch (error) {
       console.error('Error loading products:', error)
@@ -240,6 +243,9 @@ export default function AddProducts({ darkMode = false }) {
       const compressedData = JSON.stringify(limitedProducts)
       localStorage.setItem('ecommerce_products', compressedData)
       
+      // Also save to the old key for backward compatibility
+      localStorage.setItem('products', compressedData)
+      
       // التحقق من نجاح التخزين
       const storedData = localStorage.getItem('ecommerce_products')
       if (!storedData) {
@@ -302,6 +308,9 @@ export default function AddProducts({ darkMode = false }) {
       const compressedData = JSON.stringify(limitedProducts)
       localStorage.setItem('ecommerce_products', compressedData)
       
+      // Also save to the old key for backward compatibility
+      localStorage.setItem('products', compressedData)
+      
       // التحقق من نجاح التخزين
       const storedData = localStorage.getItem('ecommerce_products')
       if (!storedData) {
@@ -362,6 +371,9 @@ export default function AddProducts({ darkMode = false }) {
         
         setProducts(updatedProducts)
         localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
+        
+        // Also save to the old key for backward compatibility
+        localStorage.setItem('products', JSON.stringify(updatedProducts))
         
         // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
         window.dispatchEvent(new Event('productsUpdated'))
@@ -819,6 +831,9 @@ export default function AddProducts({ darkMode = false }) {
                             const limitedProducts = updatedProducts.slice(-50)
                             const compressedData = JSON.stringify(limitedProducts)
                             localStorage.setItem('ecommerce_products', compressedData)
+                            
+                            // Also save to the old key for backward compatibility
+                            localStorage.setItem('products', compressedData)
                             
                             const storedData = localStorage.getItem('ecommerce_products')
                             if (!storedData) {
