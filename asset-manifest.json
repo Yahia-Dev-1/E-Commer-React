@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/E-Commer-React/static/css/main.5f3b2e59.css",
-    "main.js": "/E-Commer-React/static/js/main.0d8620ea.js",
+    "main.js": "/E-Commer-React/static/js/main.df8360f3.js",
     "static/css/491.9ceaf10f.chunk.css": "/E-Commer-React/static/css/491.9ceaf10f.chunk.css",
     "static/js/491.059965e2.chunk.js": "/E-Commer-React/static/js/491.059965e2.chunk.js",
     "static/css/53.234b66ed.chunk.css": "/E-Commer-React/static/css/53.234b66ed.chunk.css",
     "static/js/53.861bb165.chunk.js": "/E-Commer-React/static/js/53.861bb165.chunk.js",
     "static/css/614.337f603e.chunk.css": "/E-Commer-React/static/css/614.337f603e.chunk.css",
-    "static/js/614.15a1404b.chunk.js": "/E-Commer-React/static/js/614.15a1404b.chunk.js",
+    "static/js/614.c6693154.chunk.js": "/E-Commer-React/static/js/614.c6693154.chunk.js",
     "static/css/473.bf6e0116.chunk.css": "/E-Commer-React/static/css/473.bf6e0116.chunk.css",
     "static/js/473.4a279365.chunk.js": "/E-Commer-React/static/js/473.4a279365.chunk.js",
     "static/css/210.43e3b553.chunk.css": "/E-Commer-React/static/css/210.43e3b553.chunk.css",
@@ -25,13 +25,13 @@
     "static/media/Modern E-Shop Logo Design.png": "/E-Commer-React/static/media/Modern E-Shop Logo Design.e330198fee1399681024.png",
     "index.html": "/E-Commer-React/index.html",
     "main.5f3b2e59.css.map": "/E-Commer-React/static/css/main.5f3b2e59.css.map",
-    "main.0d8620ea.js.map": "/E-Commer-React/static/js/main.0d8620ea.js.map",
+    "main.df8360f3.js.map": "/E-Commer-React/static/js/main.df8360f3.js.map",
     "491.9ceaf10f.chunk.css.map": "/E-Commer-React/static/css/491.9ceaf10f.chunk.css.map",
     "491.059965e2.chunk.js.map": "/E-Commer-React/static/js/491.059965e2.chunk.js.map",
     "53.234b66ed.chunk.css.map": "/E-Commer-React/static/css/53.234b66ed.chunk.css.map",
     "53.861bb165.chunk.js.map": "/E-Commer-React/static/js/53.861bb165.chunk.js.map",
     "614.337f603e.chunk.css.map": "/E-Commer-React/static/css/614.337f603e.chunk.css.map",
-    "614.15a1404b.chunk.js.map": "/E-Commer-React/static/js/614.15a1404b.chunk.js.map",
+    "614.c6693154.chunk.js.map": "/E-Commer-React/static/js/614.c6693154.chunk.js.map",
     "473.bf6e0116.chunk.css.map": "/E-Commer-React/static/css/473.bf6e0116.chunk.css.map",
     "473.4a279365.chunk.js.map": "/E-Commer-React/static/js/473.4a279365.chunk.js.map",
     "210.43e3b553.chunk.css.map": "/E-Commer-React/static/css/210.43e3b553.chunk.css.map",
@@ -49,6 +49,6 @@
   },
   "entrypoints": [
     "static/css/main.5f3b2e59.css",
-    "static/js/main.0d8620ea.js"
+    "static/js/main.df8360f3.js"
   ]
 }
