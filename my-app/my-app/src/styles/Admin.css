@@ -1,10 +1,13 @@
 .admin-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-  padding: 20px;
+  padding: clamp(10px, 3vw, 20px);
   transition: all 0.3s ease;
   position: relative;
   overflow-x: hidden;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .admin-container.dark-mode {
@@ -31,9 +34,9 @@
   background: rgba(30, 30, 60, 0.95);
   backdrop-filter: blur(25px);
   border: 2px solid rgba(138, 43, 226, 0.3);
-  border-radius: 25px;
-  padding: 40px;
-  margin-bottom: 30px;
+  border-radius: clamp(15px, 3vw, 25px);
+  padding: clamp(20px, 5vw, 40px);
+  margin-bottom: clamp(20px, 4vw, 30px);
   box-shadow: 
     0 25px 80px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(138, 43, 226, 0.2),
@@ -41,12 +44,16 @@
   transition: all 0.3s ease;
   position: relative;
   z-index: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .admin-header h1 {
   color: #ffffff;
-  margin-bottom: 20px;
-  font-size: 3.5rem;
+  margin-bottom: clamp(15px, 3vw, 20px);
+  font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 700;
   transition: all 0.3s ease;
   font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -55,6 +62,7 @@
   animation: fadeInUp 1s ease-out;
   position: relative;
   overflow: hidden;
+  text-align: center;
 }
 
 .admin-header h1::before {
@@ -88,8 +96,48 @@
 
 .admin-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: clamp(10px, 2vw, 20px);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: clamp(10px, 2vw, 20px);
+}
+
+@media (max-width: 768px) {
+  .admin-stats {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+  
+  .stat-card {
+    padding: 20px;
+  }
+  
+  .stat-card h3 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-stats .stat-card {
+  background: rgba(30, 30, 60, 0.95);
+  backdrop-filter: blur(15px);
+  border-radius: clamp(10px, 2vw, 20px);
+  padding: clamp(15px, 3vw, 25px);
+  border: 1px solid rgba(138, 43, 226, 0.2);
+  transition: all 0.3s ease;
+}
+
+.admin-stats .stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(138, 43, 226, 0.2);
+  border-color: rgba(138, 43, 226, 0.4);
 }
 
 .admin-stats .stat-card:nth-child(1) {
@@ -225,6 +273,30 @@
   z-index: 1;
   flex-wrap: wrap;
   gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.admin-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .admin-tabs {
+    flex-wrap: nowrap;
+    padding: 6px;
+    margin: -10px -10px 20px -10px;
+    width: calc(100% + 20px);
+    border-radius: 0;
+  }
+  
+  .tab-btn {
+    flex: 0 0 auto;
+    padding: 12px 20px;
+    font-size: 0.9rem;
+  }
 }
 
 
@@ -284,7 +356,7 @@
   backdrop-filter: blur(25px);
   border: 2px solid rgba(138, 43, 226, 0.3);
   border-radius: 25px;
-  padding: 40px;
+  padding: clamp(20px, 5vw, 40px);
   box-shadow: 
     0 25px 80px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(138, 43, 226, 0.2),
@@ -292,6 +364,22 @@
   transition: all 0.3s ease;
   position: relative;
   z-index: 1;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .admin-content {
+    border-radius: 20px;
+    margin: 0 -10px;
+    width: calc(100% + 20px);
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-content {
+    border-radius: 15px;
+    padding: 15px;
+  }
 }
 
 
@@ -449,16 +537,18 @@
 
 .users-list, .orders-list {
   display: grid;
-  gap: 15px;
+  gap: clamp(10px, 2vw, 15px);
 }
 
 .user-card, .order-card {
   background: rgba(30, 30, 60, 0.95);
   backdrop-filter: blur(25px);
   border: 2px solid rgba(138, 43, 226, 0.3);
-  border-radius: 20px;
-  padding: 30px;
+  border-radius: clamp(15px, 3vw, 20px);
+  padding: clamp(15px, 3vw, 30px);
   display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
   justify-content: space-between;
   align-items: center;
   transition: all 0.3s ease;

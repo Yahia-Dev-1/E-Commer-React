@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/Admin.css';
+import '../styles/AdminResponsive.css';
+import '../styles/UsersList.css';
 import database from '../utils/database';
+import UsersList from './UsersList';
+import UsersSummary from './UsersSummary';
 
 export default function Admin({ darkMode = true }) {
   const [users, setUsers] = useState([]);
@@ -190,6 +194,29 @@ export default function Admin({ darkMode = true }) {
       } else {
         alert('❌ Failed to delete user. Please try again.');
       }
+    }
+  };
+
+  const handleEditUser = (user) => {
+    // التحقق من صلاحيات التعديل
+    const protectedAdmins = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'];
+    const currentUserEmail = localStorage.getItem('currentUserEmail');
+    
+    if (protectedAdmins.includes(user.email) && !protectedAdmins.includes(currentUserEmail)) {
+      alert('❌ Only protected admins can edit admin accounts!\n\nContact yahiapro400@gmail.com or yahiacool2009@gmail.com for changes.');
+      return;
+    }
+
+    // هنا يمكنك إضافة منطق تعديل المستخدم
+    // مثل فتح نافذة منبثقة للتعديل
+  };
+
+  const handleDeleteUser = (user) => {
+    const userId = user.id || users.find(u => u.email === user.email)?.id;
+    if (userId) {
+      deleteUser(userId);
+    } else {
+      alert('Could not find user ID');
     }
   };
 
@@ -527,20 +554,16 @@ export default function Admin({ darkMode = true }) {
       <div className="admin-content">
         {activeTab === 'users' && (
           <div className="users-section">
-            <div className="section-header">
-              <h2>{showAllUsers ? 'All Users List' : 'Admin Users List'}</h2>
-              <div className="header-actions">
-                <button 
-                  className={`toggle-btn ${showAllUsers ? 'active' : ''}`}
-                  onClick={() => setShowAllUsers(!showAllUsers)}
-                >
-                  {showAllUsers ? 'Show Admin Only' : 'Show All Users'}
-                </button>
-                <button className="refresh-btn" onClick={loadData}>
-                  Refresh Data
-                </button>
-              </div>
-            </div>
+            <UsersSummary 
+              users={users}
+              adminEmails={JSON.parse(localStorage.getItem('admin_emails') || '[]')}
+            />
+            <UsersList 
+              users={users}
+              onEditUser={handleEditUser}
+              onDeleteUser={handleDeleteUser}
+              adminEmails={JSON.parse(localStorage.getItem('admin_emails') || '[]')}
+            />
             
             {users.length === 0 ? (
               <div className="no-data">
