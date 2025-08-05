@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/Admin.css';
 import database from '../utils/database';
 
@@ -7,7 +7,7 @@ export default function Admin({ darkMode = true }) {
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState('users');
   const [loading, setLoading] = useState(true);
-  const [showAllUsers, setShowAllUsers] = useState(false);
+  const [showAllUsers, setShowAllUsers] = useState(true); // Changed to true to show all users by default
   const [lastSaveTime, setLastSaveTime] = useState(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [showAddAdminForm, setShowAddAdminForm] = useState(false);
@@ -19,63 +19,7 @@ export default function Admin({ darkMode = true }) {
   const [addAdminError, setAddAdminError] = useState('');
   const [quickAdminEmail, setQuickAdminEmail] = useState('');
 
-  useEffect(() => {
-    const initializeProtectedAdmins = () => {
-      const protectedAdmins = [
-        {
-          email: 'yahiapro400@gmail.com',
-          password: 'yahia2024',
-          name: 'Yahia Pro'
-        },
-        {
-          email: 'yahiacool2009@gmail.com',
-          password: 'yahia2009',
-          name: 'Yahia Cool'
-        }
-      ];
-
-      const allUsers = database.getUsers();
-      const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
-
-      protectedAdmins.forEach(admin => {
-        const existingUser = allUsers.find(user => user.email === admin.email);
-        if (!existingUser) {
-          try {
-            database.registerUser({
-              email: admin.email,
-              password: admin.password,
-              name: admin.name
-            });
-            console.log(`Initialized protected admin: ${admin.email}`);
-          } catch (error) {
-            console.log(`Protected admin ${admin.email} already exists:`, error.message);
-          }
-        }
-
-        if (!adminEmails.includes(admin.email)) {
-          adminEmails.push(admin.email);
-        }
-      });
-
-      localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
-    };
-
-    initializeProtectedAdmins();
-    
-    setTimeout(() => {
-      checkAuthorization();
-    }, 100);
-    
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (isAuthorized) {
-      loadData();
-    }
-  }, [showAllUsers, isAuthorized]);
-
-  const checkAuthorization = () => {
+  const checkAuthorization = useCallback(() => {
     const savedAdminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
     const defaultAdminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'];
     const adminEmails = savedAdminEmails.length > 0 ? savedAdminEmails : defaultAdminEmails;
@@ -100,9 +44,9 @@ export default function Admin({ darkMode = true }) {
       console.log('User not in admin list, authorization denied');
       setIsAuthorized(false);
     }
-  };
+  }, []);
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     setLoading(true);
     const allUsers = database.getUsers();
     const allOrders = database.getOrders();
@@ -157,7 +101,63 @@ export default function Admin({ darkMode = true }) {
     setOrders(allOrders);
     setLastSaveTime(database.getLastSaveTime());
     setLoading(false);
-  };
+  }, [showAllUsers]);
+
+  useEffect(() => {
+    const initializeProtectedAdmins = () => {
+      const protectedAdmins = [
+        {
+          email: 'yahiapro400@gmail.com',
+          password: 'yahia2024',
+          name: 'Yahia Pro'
+        },
+        {
+          email: 'yahiacool2009@gmail.com',
+          password: 'yahia2009',
+          name: 'Yahia Cool'
+        }
+      ];
+
+      const allUsers = database.getUsers();
+      const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
+
+      protectedAdmins.forEach(admin => {
+        const existingUser = allUsers.find(user => user.email === admin.email);
+        if (!existingUser) {
+          try {
+            database.registerUser({
+              email: admin.email,
+              password: admin.password,
+              name: admin.name
+            });
+            console.log(`Initialized protected admin: ${admin.email}`);
+          } catch (error) {
+            console.log(`Protected admin ${admin.email} already exists:`, error.message);
+          }
+        }
+
+        if (!adminEmails.includes(admin.email)) {
+          adminEmails.push(admin.email);
+        }
+      });
+
+      localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
+    };
+
+    initializeProtectedAdmins();
+    
+    setTimeout(() => {
+      checkAuthorization();
+    }, 100);
+    
+    loadData();
+  }, [checkAuthorization, loadData]);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      loadData();
+    }
+  }, [showAllUsers, isAuthorized, loadData]);
 
   const deleteUser = (userId) => {
     const userToDelete = users.find(user => user.id === userId);
@@ -286,37 +286,6 @@ export default function Admin({ darkMode = true }) {
     }
   };
 
-  const addSpecificAdmin = () => {
-    try {
-      const currentUserEmail = localStorage.getItem('currentUserEmail');
-      if (currentUserEmail) {
-        const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
-        if (!adminEmails.includes(currentUserEmail)) {
-          adminEmails.push(currentUserEmail);
-        }
-        localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
-
-        const users = database.getUsers();
-        const userExists = users.some(user => user.email === currentUserEmail);
-        if (!userExists) {
-          database.registerUser({
-            email: currentUserEmail,
-            password: 'admin123',
-            name: currentUserEmail.split('@')[0]
-          });
-        }
-        setTimeout(() => {
-          checkAuthorization();
-        }, 500);
-        alert(`تم إضافة ${currentUserEmail} كمدير بنجاح!`);
-      } else {
-        alert('يرجى تسجيل الدخول أولاً');
-      }
-    } catch (error) {
-      alert('Error adding admin: ' + error.message);
-    }
-  };
-
   const addProtectedAdmins = () => {
     try {
       const protectedAdmins = [
@@ -373,49 +342,6 @@ export default function Admin({ darkMode = true }) {
     } catch (error) {
       alert('Error adding protected admins: ' + error.message);
     }
-  };
-
-  const addQuickAdmin = () => {
-    if (!quickAdminEmail || !quickAdminEmail.trim()) {
-      alert('يرجى إدخال إيميل المدير');
-      return;
-    }
-
-    const email = quickAdminEmail.trim();
-    const adminEmails = JSON.parse(localStorage.getItem('admin_emails') || '[]');
-    const defaultAdminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'];
-    const allAdminEmails = adminEmails.length > 0 ? adminEmails : defaultAdminEmails;
-    
-    // Check if email already exists
-    if (allAdminEmails.includes(email)) {
-      alert('هذا الإيميل مدير بالفعل!');
-      return;
-    }
-    
-    // Add to admin list
-    allAdminEmails.push(email);
-    localStorage.setItem('admin_emails', JSON.stringify(allAdminEmails));
-    
-    // Create user if doesn't exist
-    const allUsers = database.getUsers();
-    const userExists = allUsers.some(user => user.email === email);
-    
-    if (!userExists) {
-      try {
-        database.registerUser({
-          email: email,
-          password: 'admin123',
-          name: email.split('@')[0]
-        });
-        console.log(`Created new admin user: ${email}`);
-      } catch (error) {
-        console.log(`User ${email} already exists:`, error.message);
-      }
-    }
-    
-    alert(`تم إضافة ${email} كمدير بنجاح!`);
-    setQuickAdminEmail('');
-    loadData();
   };
 
   const fixLoginIssues = () => {
@@ -595,9 +521,8 @@ export default function Admin({ darkMode = true }) {
         >
           📈 Analytics
         </button>
+
       </div>
-
-
 
       <div className="admin-content">
         {activeTab === 'users' && (
@@ -619,22 +544,38 @@ export default function Admin({ darkMode = true }) {
             
             {users.length === 0 ? (
               <div className="no-data">
-                <p>No admin users found</p>
+                <p>No users found</p>
               </div>
             ) : (
               <div className="users-list">
-                {users.map((user) => {
+                <div className="users-summary">
+                  <h3>📊 Users Summary</h3>
+                  <p>Total Users: <strong>{users.length}</strong></p>
+                  <p>Protected Admins: <strong>{users.filter(u => ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'].includes(u.email)).length}</strong></p>
+                  <p>Regular Users: <strong>{users.filter(u => !['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'].includes(u.email)).length}</strong></p>
+                </div>
+                
+                {users.map((user, index) => {
                   const isProtected = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com'].includes(user.email);
+                  const isAdmin = JSON.parse(localStorage.getItem('admin_emails') || '[]').includes(user.email);
                   return (
-                    <div key={user.id} className={`user-card ${isProtected ? 'protected' : ''}`}>
+                    <div key={user.id} className={`user-card ${isProtected ? 'protected' : ''} ${isAdmin ? 'admin' : 'regular'}`}>
                       <div className="user-info">
-                        <h3>
-                          {user.name}
-                          {isProtected && <span className="protected-badge">🛡️ Protected</span>}
-                        </h3>
-                        <p className="user-email">{user.email}</p>
-                        <p className="user-date">Registration Date: {formatDate(user.createdAt)}</p>
-                        <p className="user-orders">Number of Orders: {user.orders?.length || 0}</p>
+                        <div className="user-header">
+                          <h3>
+                            #{index + 1} - {user.name}
+                            {isProtected && <span className="protected-badge">🛡️ Protected Admin</span>}
+                            {isAdmin && !isProtected && <span className="admin-badge">👑 Admin</span>}
+                            {!isAdmin && <span className="user-badge">👤 User</span>}
+                          </h3>
+                        </div>
+                        <p className="user-email"><strong>Email:</strong> {user.email}</p>
+                        <p className="user-date"><strong>Registration Date:</strong> {formatDate(user.createdAt)}</p>
+                        <p className="user-orders"><strong>Number of Orders:</strong> {user.orders?.length || 0}</p>
+                        <p className="user-id"><strong>User ID:</strong> {user.id}</p>
+                        {user.password && (
+                          <p className="user-password"><strong>Password:</strong> {user.password}</p>
+                        )}
                       </div>
                       <div className="user-actions">
                         {!isProtected && (
@@ -984,7 +925,7 @@ export default function Admin({ darkMode = true }) {
             </div>
           </div>
         )}
-        
+
 
       </div>
     </div>

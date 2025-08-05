@@ -1324,30 +1324,28 @@
 }
 
 .stat-value {
-  color: #000000 !important;
-  background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   font-weight: 800;
   font-size: 1.3rem;
   font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   letter-spacing: 0.5px;
-  text-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   position: relative;
   z-index: 1;
   padding: 8px 16px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 153, 204, 0.1) 100%);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.2);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   transition: all 0.3s ease;
 }
 
 .stat-value:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.3);
-  border-color: rgba(0, 212, 255, 0.5);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  border-color: rgba(102, 126, 234, 0.5);
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
 }
 
 /* Top Products - Enhanced Design */
@@ -2197,103 +2195,120 @@
 
 @media (max-width: 480px) {
   .admin-container {
-    padding: 5px;
+    padding: 8px;
   }
   
   .admin-header {
-    padding: 15px;
+    padding: 20px 15px;
   }
   
   .admin-header h1 {
     font-size: 2rem;
+    text-align: center;
   }
   
   .stat-card {
-    padding: 15px;
+    padding: 20px 15px;
+    margin-bottom: 15px;
   }
   
   .stat-card h3 {
-    font-size: 14px;
+    font-size: 1.4rem;
+    text-align: center;
   }
   
   .stat-card p {
-    font-size: 18px;
+    font-size: 1.1rem;
+    text-align: center;
   }
   
   .admin-tabs {
-    padding: 10px;
-    gap: 6px;
+    padding: 15px;
+    gap: 10px;
   }
   
   .tab-btn {
-    padding: 10px 12px;
-    font-size: 12px;
-    border-radius: 12px;
+    padding: 15px 20px;
+    font-size: 16px;
+    border-radius: 15px;
+    font-weight: 600;
   }
   
   .user-card, .order-card {
-    padding: 10px;
+    padding: 20px 15px;
+    margin-bottom: 15px;
   }
   
   .user-info h3, .order-info h3 {
-    font-size: 16px;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
   }
   
   .user-email, .order-email {
-    font-size: 12px;
+    font-size: 1rem;
+    margin-bottom: 8px;
   }
   
   .user-date, .order-date, .order-status, .order-total, .order-items, .user-orders {
-    font-size: 11px;
+    font-size: 0.95rem;
+    margin-bottom: 5px;
   }
   
   .delete-btn, .reject-btn, .approve-btn, .delete-order-btn {
-    padding: 6px 12px;
-    font-size: 11px;
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+    margin: 5px;
   }
   
   .refresh-btn, .toggle-btn {
-    padding: 6px 12px;
-    font-size: 11px;
+    padding: 12px 16px;
+    font-size: 14px;
+    border-radius: 8px;
   }
   
   .order-item .item-details h4 {
-    font-size: 14px;
+    font-size: 1.1rem;
   }
   
   .order-item .item-price,
   .order-item .item-quantity,
   .order-item .item-total {
-    font-size: 12px;
+    font-size: 1rem;
   }
   
   .shipping-info h4 {
-    font-size: 14px;
+    font-size: 1.2rem;
   }
   
   .shipping-info p {
-    font-size: 11px;
+    font-size: 1rem;
   }
   
   .stats-card h3 {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
   }
   
   .analytics-card h3 {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
   }
   
   .stat-item {
-    padding: 1rem;
+    padding: 15px;
+    margin-bottom: 10px;
   }
   
   .stat-label {
-    font-size: 0.9rem;
+    font-size: 1rem;
+    margin-bottom: 8px;
   }
   
   .stat-value {
-    font-size: 1.1rem;
-    padding: 6px 12px;
+    color: #ffffff !important;
+    font-size: 1.3rem;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
   
   .product-stat {
@@ -2413,6 +2428,53 @@
     font-size: 12px;
   }
   
+  /* تحسينات لبطاقات المستخدمين المحمية في الشاشات المتوسطة */
+  .user-card.protected {
+    border-width: 2px;
+    padding: 20px;
+    margin-bottom: 15px;
+  }
+  
+  .protected-badge {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    border-radius: 12px;
+    margin: 3px 3px 3px 0;
+  }
+  
+  .protected-message {
+    font-size: 0.85rem;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 12px;
+  }
+  
+  .user-card.protected .user-info h3 {
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+  }
+  
+  .user-card.protected .user-email {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+  }
+  
+  .protection-warning {
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 15px;
+  }
+  
+  .protection-warning h4 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+  
+  .protection-warning p {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  
   /* تحسينات إضافية للأجهزة احمولة */
   .admin-content {
     padding: 20px;
@@ -2459,6 +2521,58 @@
   
   .dark-mode .loading p {
     font-size: 14px;
+  }
+  
+  /* تحسينات خاصة لبطاقات المستخدمين المحمية في الموبايل */
+  .user-card.protected {
+    border-width: 3px;
+    padding: 25px 20px;
+    margin-bottom: 20px;
+  }
+  
+  .protected-badge {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 15px;
+    margin: 5px 5px 5px 0;
+    display: inline-block;
+  }
+  
+  .protected-message {
+    font-size: 0.9rem;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-top: 15px;
+    text-align: center;
+    font-weight: 700;
+  }
+  
+  .user-card.protected .user-info h3 {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+  
+  .user-card.protected .user-email {
+    font-size: 1rem;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  .protection-warning {
+    padding: 25px 20px;
+    margin: 25px 0;
+    border-radius: 20px;
+  }
+  
+  .protection-warning h4 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+  }
+  
+  .protection-warning p {
+    font-size: 1rem;
+    line-height: 1.5;
   }
 }
 

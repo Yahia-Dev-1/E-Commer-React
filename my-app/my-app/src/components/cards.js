@@ -21,6 +21,13 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
 
+  // تأكد من وجود جميع الخصائص المطلوبة
+  const safeTitle = title || 'Untitled Product';
+  const safeDescription = description || 'No description available';
+  const safePrice = price || '0.00';
+  const safeQuantity = typeof quantity === 'number' ? quantity : 0;
+  const safeImage = image || 'https://via.placeholder.com/400x400?text=No+Image';
+
   const handleImageLoad = () => {
     setImageLoaded(true)
   }
@@ -31,14 +38,14 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
   }
 
   const handleClick = () => {
-    if (quantity > 0) {
+    if (safeQuantity > 0) {
       onAddToCart();
     }
   }
 
-  const isOutOfStock = quantity <= 0;
-  const isLowStock = quantity > 0 && quantity <= 5;
-  const isInStock = quantity > 5;
+  const isOutOfStock = safeQuantity <= 0;
+  const isLowStock = safeQuantity > 0 && safeQuantity <= 5;
+  const isInStock = safeQuantity > 5;
   const isAdmin = isCurrentUserAdmin();
 
   return (
@@ -61,8 +68,8 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
         )}
         <img 
           className="img" 
-          src={image} 
-          alt={title}
+          src={safeImage} 
+          alt={safeTitle}
           loading="lazy"
           onLoad={handleImageLoad}
           onError={handleImageError}
@@ -77,12 +84,12 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
           </div>
         )}
       </div>
-      <div className="card-title">{title}</div>
-      <div className="card-subtitle">{description}</div>
+      <div className="card-title">{safeTitle}</div>
+      <div className="card-subtitle">{safeDescription}</div>
       <div className="quantity-badge-container" style={{ textAlign: 'center', margin: '8px 0' }}>
-        <span className={`quantity-badge ${isOutOfStock ? 'out-of-stock' : quantity <= 5 ? 'low-stock' : 'in-stock'}`}>
+        <span className={`quantity-badge ${isOutOfStock ? 'out-of-stock' : safeQuantity <= 5 ? 'low-stock' : 'in-stock'}`}>
           {isOutOfStock ? 'Out of Stock' : 
-           isAdmin ? (quantity <= 5 ? `Low (${quantity})` : `${quantity}`) : 
+           isAdmin ? (safeQuantity <= 5 ? `Low (${safeQuantity})` : `${safeQuantity}`) : 
            'In Stock'}
         </span>
       </div>
@@ -90,7 +97,7 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
       <div className="card-footer">
         <div className="card-price">
           <span className="currency-symbol">$</span>
-          <span className="price-value">{price}</span>
+          <span className="price-value">{safePrice}</span>
           <div className="price-decoration"></div>
         </div>
         <button 
@@ -122,82 +129,39 @@ function FilterButton({ category, isActive, onClick }) {
 }
 
 // Main Cards Container Component
-export default function Cards({ addToCart, darkMode = false }) {
+export default function Cards({ addToCart, darkMode = false, products = [], productsVersion = 0 }) {
   // const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState('All')
-  const [products, setProducts] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Load products from localStorage on component mount and listen for changes
+  // Products are now passed from App.js, no need to load from localStorage
+  console.log(`📦 Cards: Received ${products.length} products from App.js (version: ${productsVersion})`)
+  
+  // Log when products change
   React.useEffect(() => {
-    const loadProducts = () => {
-      try {
-        const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
-        
-        // تحقق من وجود منتجات محفوظة
-        if (savedProducts.length > 0) {
-          console.log(`✅ Loaded ${savedProducts.length} products from localStorage`)
-          setProducts(savedProducts)
-        } else {
-          // لا توجد منتجات محفوظة، اترك القائمة فارغة
-          console.log('ℹ️ No products found in localStorage, starting with empty list')
-          setProducts([])
-        }
-      } catch (error) {
-        console.error('Error loading products:', error)
-        // Fallback to default products if there's an error
-        const defaultProducts = [
-          {
-            id: 1,
-            image: "https://picsum.photos/400/400?random=1",
-            title: "Hoodie",
-            description: "Comfortable and stylish hoodie for everyday wear.",
-            price: "49.99",
-            category: "Clothing",
-            quantity: 10
-          }
-        ]
-        setProducts(defaultProducts)
-      }
-    }
-
-    // Load products initially
-    loadProducts()
-
-    // Listen for storage changes to update products in real-time
-    const handleStorageChange = (e) => {
-      if (e.key === 'ecommerce_products') {
-        loadProducts()
-      }
-    }
-
-    // Add event listener for storage changes
-    window.addEventListener('storage', handleStorageChange)
-
-    // Also listen for custom events (for same-tab updates)
-    const handleCustomStorageChange = () => {
-      loadProducts()
-    }
-    window.addEventListener('productsUpdated', handleCustomStorageChange)
-
-    // Cleanup event listeners
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('productsUpdated', handleCustomStorageChange)
-    }
-  }, [])
+    console.log(`🔄 Cards: Products updated - ${products.length} products (version: ${productsVersion})`)
+    console.log('📋 Products titles:', products.map(p => p.title))
+  }, [products, productsVersion])
 
   // Get unique categories (memoized)
   const categories = React.useMemo(() => {
-    return ['All', ...new Set(products.map(product => product.category))]
+    try {
+      const savedCategories = JSON.parse(localStorage.getItem('ecommerce_categories') || '[]');
+      if (savedCategories.length === 0) {
+        return ['All', ...new Set(products.map(product => product.category))];
+      }
+      return ['All', ...savedCategories];
+    } catch (error) {
+      return ['All', ...new Set(products.map(product => product.category))];
+    }
   }, [products])
 
   // Filter products based on active filter and search term (memoized)
   const filteredProducts = React.useMemo(() => {
     return products.filter(product => {
       const matchesCategory = activeFilter === 'All' || product.category === activeFilter
-      const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.description.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesSearch = (product.title && product.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                           (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
       return matchesCategory && matchesSearch
     })
   }, [products, activeFilter, searchTerm])
@@ -214,21 +178,10 @@ export default function Cards({ addToCart, darkMode = false }) {
     }
   }
 
-  // Function to refresh products from localStorage
+  // Function to refresh products (now triggers App.js to reload)
   const refreshProducts = () => {
-    try {
-      const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
-      if (savedProducts.length > 0) {
-        console.log(`🔄 Refreshed ${savedProducts.length} products from localStorage`)
-        setProducts(savedProducts)
-      } else {
-        console.log('ℹ️ No products found in localStorage')
-        setProducts([])
-      }
-    } catch (error) {
-      console.error('Error refreshing products:', error)
-      setProducts([])
-    }
+    console.log('🔄 Cards: Requesting refresh from App.js...')
+    window.dispatchEvent(new CustomEvent('productsUpdated'))
   }
 
   // دالة لمسح جميع المنتجات من اللوكل استورج
@@ -237,7 +190,8 @@ export default function Cards({ addToCart, darkMode = false }) {
       try {
         localStorage.removeItem('ecommerce_products')
         localStorage.removeItem('has_default_products')
-        setProducts([])
+        // Trigger App.js to reload products
+        window.dispatchEvent(new CustomEvent('productsUpdated'))
         console.log('🗑️ All products cleared from localStorage')
         alert('All products have been cleared successfully!')
       } catch (error) {

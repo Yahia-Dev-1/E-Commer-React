@@ -1,7 +1,7 @@
 {
   "short_name": "Yahia Store",
-  "name": "Yahia Store - Advanced E-commerce Store",
-  "description": "Advanced e-commerce store for clothing, shoes, and accessories. Safe and fast shopping with excellent customer service",
+  "name": "Yahia Store - Advanced E-commerce Store for Clothing, Shoes, and Accessories",
+  "description": "Advanced e-commerce store for clothing, shoes, and accessories with excellent customer service. Safe and fast shopping with exclusive offers and discounts",
   "icons": [
     {
       "src": "Modern E-Shop Logo Design.png",
@@ -11,37 +11,132 @@
     {
       "src": "Modern E-Shop Logo Design.png",
       "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
+      "sizes": "192x192"
     },
     {
       "src": "Modern E-Shop Logo Design.png",
       "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "any maskable"
+      "sizes": "512x512"
+    },
+    {
+      "src": "Modern E-Shop Logo Design.png",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "apple touch"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "orientation": "portrait",
   "theme_color": "#1a1a2e",
-  "background_color": "#1a1a2e",
-  "categories": ["shopping", "lifestyle", "fashion"],
+  "background_color": "#0f0f23",
+  "orientation": "portrait-primary",
+  "scope": "/",
   "lang": "en",
   "dir": "ltr",
-  "scope": "/",
+  "categories": ["shopping", "fashion", "lifestyle", "business"],
+  "screenshots": [
+    {
+      "src": "Modern E-Shop Logo Design.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Yahia Store - Homepage"
+    },
+    {
+      "src": "Modern E-Shop Logo Design.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+              "label": "Yahia Store - Mobile App"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Products",
+      "short_name": "New",
+      "description": "View latest products",
+      "url": "/new-arrivals",
+      "icons": [
+        {
+          "src": "Modern E-Shop Logo Design.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Special Offers",
+      "short_name": "Offers",
+      "description": "View offers and discounts",
+      "url": "/offers",
+      "icons": [
+        {
+          "src": "Modern E-Shop Logo Design.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Shopping Cart",
+      "short_name": "Cart",
+      "description": "View shopping cart",
+      "url": "/cart",
+      "icons": [
+        {
+          "src": "Modern E-Shop Logo Design.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://yahia-dev-1.github.io/E-Commer-React"
+    }
+  ],
   "prefer_related_applications": false,
-  "display_override": ["standalone", "minimal-ui"],
   "edge_side_panel": {
     "preferred_width": 400
   },
   "launch_handler": {
     "client_mode": "navigate-existing"
   },
+  "handle_links": "preferred",
   "protocol_handlers": [
     {
-      "protocol": "web+store",
-      "url": "/?product=%s"
+      "protocol": "web+shop",
+      "url": "/product/%s"
     }
-  ]
+  ],
+  "file_handlers": [
+    {
+      "action": "/",
+      "accept": {
+        "application/json": [".json"]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "permissions": [
+    "notifications",
+    "geolocation"
+  ],
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "id": "yahia-store-ecommerce",
+  "version": "1.0.0",
+  "author": "Yahia Store Team",
+  "homepage_url": "https://yahia-dev-1.github.io/E-Commer-React",
+  "developer": {
+    "name": "Yahia Store",
+    "url": "https://github.com/yahia-dev-1"
+  }
 }

@@ -153,7 +153,7 @@ export default function AddProducts({ darkMode = false }) {
       document.removeEventListener('mousedown', handleClickOutside)
       clearTimeout(window.storageTimeout)
     }
-      }, [navigate])
+  }, [navigate])
 
   const loadProducts = () => {
     try {
@@ -464,7 +464,7 @@ export default function AddProducts({ darkMode = false }) {
       <div className="admin-actions">
         {!showCategoriesSection && (
           <>
-            <button 
+        <button 
               className="add-product-btn"
               onClick={() => {
                 setShowForm(!showForm)
@@ -502,36 +502,36 @@ export default function AddProducts({ darkMode = false }) {
           <h2>{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
           
           <form onSubmit={editingProduct ? handleEditSubmit : handleSubmit} className="product-form">
-            <div className="form-group">
+          <div className="form-group">
               <label htmlFor="title">Product Title *</label>
-              <input
-                type="text"
+            <input
+              type="text"
                 id="title"
                 name="title"
                 value={editingProduct ? editingProduct.title : newProduct.title}
                 onChange={editingProduct ? handleEditInputChange : handleInputChange}
                 placeholder="Enter product title"
-                required
-              />
-            </div>
+              required
+            />
+          </div>
 
             <div className="form-row">
-              <div className="form-group">
+          <div className="form-group">
                 <label htmlFor="price">Price *</label>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
+            <input
+              type="number"
+              id="price"
+              name="price"
                   value={editingProduct ? editingProduct.price : newProduct.price}
                   onChange={editingProduct ? handleEditInputChange : handleInputChange}
                   placeholder="0.00"
-                  step="0.01"
+              step="0.01"
                   min="0"
-                  required
-                />
-              </div>
+              required
+            />
+          </div>
 
-              <div className="form-group">
+          <div className="form-group">
                 <label htmlFor="quantity">Quantity *</label>
                 <input
                   type="number"
@@ -541,12 +541,12 @@ export default function AddProducts({ darkMode = false }) {
                   onChange={editingProduct ? handleEditInputChange : handleInputChange}
                   placeholder="1"
                   min="1"
-                  required
-                />
+              required
+            />
               </div>
-            </div>
+          </div>
 
-            <div className="form-group">
+          <div className="form-group">
               <label htmlFor="category">Category *</label>
               <div className="category-selector">
                 <button
@@ -578,20 +578,20 @@ export default function AddProducts({ darkMode = false }) {
                   </div>
                 )}
               </div>
-            </div>
+          </div>
 
-            <div className="form-group">
+          <div className="form-group">
               <label htmlFor="image">Product Image *</label>
               <div className="image-upload-container">
-                <input
+            <input
                   type="text"
-                  id="image"
-                  name="image"
+              id="image"
+              name="image"
                   value={editingProduct ? editingProduct.image : newProduct.image}
                   onChange={editingProduct ? handleEditInputChange : handleInputChange}
                   placeholder="Enter image URL (supports: jpg, png, webp, gif)"
-                  required
-                />
+              required
+            />
                 <input
                   type="file"
                   id="imageFile"
@@ -657,9 +657,9 @@ export default function AddProducts({ darkMode = false }) {
                   </div>
                 )}
               </div>
-            </div>
+          </div>
 
-            <div className="form-group">
+          <div className="form-group">
               <label htmlFor="description">Description</label>
               <textarea
                 id="description"
@@ -668,8 +668,8 @@ export default function AddProducts({ darkMode = false }) {
                 onChange={editingProduct ? handleEditInputChange : handleInputChange}
                 rows="4"
                 placeholder="Enter product description"
-              />
-            </div>
+            />
+          </div>
 
             <div className="form-actions">
               <button type="submit" className="submit-btn">
@@ -685,9 +685,9 @@ export default function AddProducts({ darkMode = false }) {
                 }}
               >
                 Cancel
-              </button>
+          </button>
             </div>
-          </form>
+        </form>
         </div>
       )}
 
@@ -696,17 +696,17 @@ export default function AddProducts({ darkMode = false }) {
         <div className="products-section">
           <div className="products-header">
             <h2>Products Management ({products.length})</h2>
-          </div>
-          
-          {products.length === 0 ? (
+      </div>
+
+        {products.length === 0 ? (
             <div className="no-products">
               <p>No products added yet.</p>
             </div>
-          ) : (
-            <div className="products-grid">
-              {products.map(product => (
-                <div key={product.id} className="product-card">
-                  <div className="product-image">
+        ) : (
+          <div className="products-grid">
+            {products.map(product => (
+              <div key={product.id} className="product-card">
+                <div className="product-image">
                     <img 
                       src={product.image} 
                       alt={product.title} 
@@ -784,8 +784,8 @@ export default function AddProducts({ darkMode = false }) {
                         🔒 Protected Product - Only yahiapro400@gmail.com and yahiacool2009@gmail.com can modify
                       </p>
                     )}
-                  </div>
-                  <div className="product-actions">
+                </div>
+                <div className="product-actions">
                     <button 
                       className="edit-btn"
                       onClick={() => {
@@ -800,8 +800,8 @@ export default function AddProducts({ darkMode = false }) {
                     >
                       ✏️ Edit
                     </button>
-                    <button 
-                      className="delete-btn"
+                  <button 
+                    className="delete-btn"
                       onClick={() => {
                         const productToDelete = products.find(p => p.id === product.id)
                         
@@ -841,13 +841,13 @@ export default function AddProducts({ darkMode = false }) {
                       title="Delete Product"
                     >
                       🗑️ Delete
-                    </button>
-                  </div>
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       )}
 
       {/* Categories Management Section */}

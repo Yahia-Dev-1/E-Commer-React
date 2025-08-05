@@ -10,6 +10,7 @@ import database from './utils/database'
 const About = lazy(() => import('./components/About'))
 const Services = lazy(() => import('./components/Services'))
 const AddProducts = lazy(() => import('./components/AddProducts'))
+const CategoryManagement = lazy(() => import('./components/CategoryManagement'))
 const Cards = lazy(() => import('./components/cards'))
 const Login = lazy(() => import('./components/Login'))
 const Orders = lazy(() => import('./components/Orders'))
@@ -54,7 +55,51 @@ function AppContent() {
   const [showAddToCartModal, setShowAddToCartModal] = useState(false)
   const [orders, setOrders] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [darkMode, setDarkMode] = useState(true)
+  const [products, setProducts] = useState([])
+  const [productsVersion, setProductsVersion] = useState(0) // For forcing re-renders
+  // Dark mode is always enabled
+
+  // Load products function
+  const loadProducts = () => {
+    try {
+      const savedProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
+      console.log('🔍 App.js: Raw products from localStorage:', savedProducts)
+      
+      const validProducts = savedProducts.filter(product => 
+        product && 
+        product.id && 
+        product.title && 
+        product.description && 
+        product.price !== undefined && 
+        product.category && 
+        product.quantity !== undefined
+      )
+      
+      console.log('🔍 App.js: Valid products after filtering:', validProducts)
+      console.log('🔍 App.js: Product titles:', validProducts.map(p => p.title))
+      
+      setProducts(validProducts)
+      console.log(`📦 App.js: Loaded ${validProducts.length} products`)
+    } catch (error) {
+      console.error('Error loading products in App.js:', error)
+      setProducts([])
+    }
+  }
+
+  // Handle products update
+  const handleProductsUpdate = () => {
+    console.log('🔄 App.js: Products updated, reloading...')
+    // Reload immediately and also with delay to ensure we get the latest data
+    loadProducts()
+    setProductsVersion(prev => prev + 1)
+    console.log('✅ App.js: Products reloaded immediately')
+    
+    setTimeout(() => {
+      loadProducts()
+      setProductsVersion(prev => prev + 1)
+      console.log('✅ App.js: Products reloaded with delay')
+    }, 100)
+  }
 
   // Check for saved user and cart data on component mount
   useEffect(() => {
@@ -95,8 +140,13 @@ function AppContent() {
           }
         }
 
-        // Always use dark mode
-        setDarkMode(true)
+        // Load products initially
+        loadProducts()
+        
+        // Listen for product updates
+        window.addEventListener('productsUpdated', handleProductsUpdate)
+        
+        // Always use dark mode (no need to set since it's always true)
         
         // Clean up localStorage to prevent quota issues
         cleanupLocalStorage()
@@ -108,6 +158,28 @@ function AppContent() {
     }
 
     initializeApp()
+    
+    // Cleanup function for event listeners
+    return () => {
+      window.removeEventListener('productsUpdated', handleProductsUpdate)
+    }
+  }, [])
+
+  // Additional effect to listen for localStorage changes
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'ecommerce_products') {
+        console.log('🔄 App.js: localStorage changed, reloading products...')
+        loadProducts()
+        setProductsVersion(prev => prev + 1)
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
 
   const addToCart = (product) => {
@@ -512,10 +584,7 @@ function AppContent() {
   const cartCount = cartItems.length
 
   // Function to toggle dark mode (disabled - always dark)
-  const toggleDarkMode = () => {
-    // Dark mode is always enabled
-    setDarkMode(true)
-  }
+  // Dark mode is always enabled (no toggle needed)
 
   // Apply dark mode to body (always dark)
   useEffect(() => {
@@ -533,7 +602,12 @@ function AppContent() {
       <Routes>
         <Route path='/' element={
           <Suspense fallback={<LoadingSpinner />}>
-            <Cards addToCart={addToCart} darkMode={true} />
+            <Cards 
+              addToCart={addToCart} 
+              darkMode={true} 
+              products={products}
+              productsVersion={productsVersion}
+            />
           </Suspense>
         } />
         <Route path='/about' element={
@@ -595,7 +669,16 @@ function AppContent() {
         } />
         <Route path='/add-products' element={
           <Suspense fallback={<LoadingSpinner />}>
-            <AddProducts darkMode={true} />
+            <AddProducts 
+              darkMode={true} 
+              products={products}
+              productsVersion={productsVersion}
+            />
+          </Suspense>
+        } />
+        <Route path='/category-management' element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <CategoryManagement darkMode={true} />
           </Suspense>
         } />
       </Routes>
@@ -604,6 +687,7 @@ function AppContent() {
        location.pathname !== '/orders' && 
        location.pathname !== '/admin' && 
        location.pathname !== '/add-products' && 
+       location.pathname !== '/category-management' && 
        location.pathname !== '/cart' && 
         <Suspense fallback={<LoadingSpinner />}>
           <Footer darkMode={true} />
