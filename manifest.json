@@ -21,8 +21,7 @@
     {
       "src": "Modern E-Shop Logo Design.png",
       "type": "image/png",
-      "sizes": "180x180",
-      "purpose": "apple touch"
+      "sizes": "180x180"
     }
   ],
   "start_url": ".",
@@ -47,7 +46,7 @@
       "sizes": "750x1334",
       "type": "image/png",
       "form_factor": "narrow",
-              "label": "Yahia Store - Mobile App"
+      "label": "Yahia Store - Mobile App"
     }
   ],
   "shortcuts": [
