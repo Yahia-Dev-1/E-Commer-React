@@ -1,8 +1,39 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../styles/AddProducts.css'
-
+import ProductApis from '../apis/ProductApis'
+import ProductItem from './ProductItem'
+import { normalizeStrapiProduct } from '../apis/normalizeProduct'
 export default function AddProducts({ darkMode = false }) {
+  const [productList,setProductList]= useState([])
+	useEffect(()=>{
+		getLatestProducts_();
+	},[])
+	const getLatestProducts_=()=>{
+    ProductApis.getLatestProducts()
+      .then(res => {
+        const items = Array.isArray(res?.data?.data) ? res.data.data : []
+        setProductList(items)
+
+        // حوّل بيانات Strapi إلى شكل المنتجات المحليّة ثم خزّنها حتى تظهر في الصفحة الرئيسية أيضًا
+        const mediaBase = process.env.REACT_APP_STRAPI_MEDIA_URL || 'http://localhost:1337'
+        const mapped = items.map(item => normalizeStrapiProduct(item, mediaBase))
+
+        // حدّث قائمة المنتجات المحليّة والـ localStorage ثم أخطر باقي الصفحات
+        setProducts(mapped)
+        try {
+          localStorage.setItem('ecommerce_products', JSON.stringify(mapped))
+          window.dispatchEvent(new Event('productsUpdated'))
+        } catch (e) {
+          console.warn('Failed to write mapped products to localStorage', e)
+        }
+      })
+      .catch(err => {
+        console.warn('Strapi fetch failed:', err?.response?.status, err?.message)
+        // لا تُظهر خطأ قاتل في الواجهة، فقط سجّل رسالة ودع الصفحة تعمل محليًا
+		})
+	}
+	
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -231,7 +262,7 @@ export default function AddProducts({ darkMode = false }) {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
     if (!newProduct.title || !newProduct.price || !newProduct.image || !newProduct.quantity) {
@@ -251,6 +282,62 @@ export default function AddProducts({ darkMode = false }) {
       createdBy: `${localStorage.getItem('currentUserEmail') || localStorage.getItem('loggedInUser') || localStorage.getItem('userEmail') || 'Admin'} (Admin)`,
       isProtected: isProtectedAdmin()
     }
+
+    // إرسال إلى Strapi أولاً (مع رفع الصورة إن وُجدت كرابط Base64)
+    try {
+      const strapiToken = process.env.REACT_APP_STRAPI_TOKEN
+      if (!strapiToken) {
+        console.warn('No REACT_APP_STRAPI_TOKEN found. Skipping Strapi create and saving locally only.')
+        throw new Error('STRAPI_TOKEN_MISSING')
+      }
+      let uploadedImageId = null
+      let uploadedImageUrl = null
+      // لو الصورة Base64 أو رابط http نرفعها لـ upload
+      if (product.image && (product.image.startsWith('data:image') || product.image.startsWith('http'))) {
+        const mediaForm = new FormData()
+        const blob = await (await fetch(product.image)).blob()
+        const file = new File([blob], `${Date.now()}.png`, { type: blob.type || 'image/png' })
+        mediaForm.append('files', file)
+        const uploadRes = await ProductApis.uploadFile(mediaForm)
+        uploadedImageId = uploadRes?.data?.[0]?.id || null
+        uploadedImageUrl = uploadRes?.data?.[0]?.url || null
+      }
+
+      const payload = {
+        titel: product.title,
+        description: product.description,
+        price: Number(product.price),
+        stock: Number(product.quantity || 1),
+        publishedAt: new Date().toISOString(),
+        ...(uploadedImageId ? { img: uploadedImageId } : {}),
+      }
+
+      const res = await ProductApis.createProduct(payload)
+      const created = res?.data?.data
+      if (created) {
+        product.strapiDocumentId = created.documentId || undefined
+        product.id = created.documentId || created.id || product.id
+        // لو توفرت رابط الصورة من رفع Cloudinary استخدمه مباشرة بدون fetch إضافي
+        if (uploadedImageUrl) {
+          product.image = uploadedImageUrl
+        }
+        const mediaBase = process.env.REACT_APP_STRAPI_MEDIA_URL || 'http://localhost:1337'
+        const normalized = normalizeStrapiProduct(created, mediaBase)
+        product.title = normalized.title || product.title
+        product.description = normalized.description || product.description
+        product.price = normalized.price
+        product.quantity = normalized.quantity
+        product.createdAt = normalized.createdAt
+      }
+    } catch (apiErr) {
+      const status = apiErr?.response?.status
+      if (status === 401 || status === 403) {
+        setMessage('لا صلاحيات للوصول إلى Strapi (403). فعّل API Token أو افتح صلاحيات Public')
+      } else if (apiErr?.message !== 'STRAPI_TOKEN_MISSING') {
+        setMessage('تعذّر الحفظ في Strapi. سيتم الحفظ محليًا فقط')
+      }
+      console.warn('Failed to create on Strapi, will save locally only:', apiErr)
+    }   
 
     // إضافة المنتج الجديد إلى المنتجات الموجودة
     const updatedProducts = [...products, product]
@@ -335,7 +422,7 @@ export default function AddProducts({ darkMode = false }) {
     }, 2000)
   }
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault()
     
     if (!editingProduct.title || !editingProduct.price || !editingProduct.image || !editingProduct.quantity) {
@@ -343,86 +430,101 @@ export default function AddProducts({ darkMode = false }) {
       return
     }
 
-    // Check if trying to edit a protected product
     if (editingProduct.isProtected && !canModifyProtectedAdmin()) {
       alert('❌ Cannot edit protected products!\n\nOnly yahiapro400@gmail.com and yahiacool2009@gmail.com can edit protected products.')
       return
     }
 
-    const updatedProduct = {
+    // حاول تحديث Strapi أولاً
+    let updatedImageId = null
+    try {
+      const strapiToken = process.env.REACT_APP_STRAPI_TOKEN
+      if (!strapiToken) throw new Error('STRAPI_TOKEN_MISSING')
+
+      // استخدم documentId إن توفر للتحديث بدقة
+      const strapiDocId = editingProduct.strapiDocumentId || editingProduct.id
+      const hasValidDocId = typeof strapiDocId === 'string' && strapiDocId.length > 10
+      if (!hasValidDocId) {
+        // المنتج المحلي غير مرتبط بـ Strapi (منتج قديم محلي فقط)
+        throw new Error('STRAPI_DOC_ID_MISSING')
+      }
+
+      // لو الصورة Base64 أو رابط خارجي نرفعها
+      if (editingProduct.image && (editingProduct.image.startsWith('data:image') || editingProduct.image.startsWith('http'))) {
+        const mediaForm = new FormData()
+        const blob = await (await fetch(editingProduct.image)).blob()
+        const file = new File([blob], `${Date.now()}.png`, { type: blob.type || 'image/png' })
+        mediaForm.append('files', file)
+        const uploadRes = await ProductApis.uploadFile(mediaForm)
+        updatedImageId = uploadRes?.data?.[0]?.id || null
+      }
+
+      const payload = {
+        titel: editingProduct.title,
+        description: editingProduct.description,
+        price: parseFloat(editingProduct.price),
+        publishedAt: new Date().toISOString(),
+        ...(updatedImageId ? { img: updatedImageId } : {}),
+      }
+
+      await ProductApis.updateProduct(strapiDocId, payload)
+
+      // اجلب النسخة النهائية من Strapi
+      try {
+        let full
+        try {
+          full = await ProductApis.getProductByDocumentId(strapiDocId)
+        } catch {
+          full = await ProductApis.findProductByDocumentId(strapiDocId)
+        }
+        const node = full?.data?.data?.attributes ? full.data.data : (full?.data?.data?.[0] || null)
+        const attrs = node?.attributes || {}
+        const mediaBase = process.env.REACT_APP_STRAPI_MEDIA_URL || 'http://localhost:1337'
+        const rawUrl = attrs?.img?.data?.attributes?.formats?.medium?.url
+          || attrs?.img?.data?.attributes?.formats?.small?.url
+          || attrs?.img?.data?.attributes?.url
+        const updatedFromApi = {
+          id: strapiDocId,
+          strapiDocumentId: strapiDocId,
+          title: attrs?.titel || editingProduct.title,
+          description: attrs?.description || editingProduct.description,
+          price: Number(attrs?.price ?? editingProduct.price),
+          quantity: parseInt(editingProduct.quantity),
+          image: rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `${mediaBase}${rawUrl}`) : editingProduct.image,
+          category: editingProduct.category || 'other',
+          updatedAt: new Date().toISOString(),
+          updatedBy: `${localStorage.getItem('currentUserEmail') || localStorage.getItem('loggedInUser') || localStorage.getItem('userEmail') || 'Admin'} (Admin)`
+        }
+
+        const updatedProducts = products.map(p => p.id === editingProduct.id ? updatedFromApi : p)
+        setProducts(updatedProducts)
+        localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
+      } catch {}
+    } catch (apiErr) {
+      if (apiErr?.message === 'STRAPI_DOC_ID_MISSING') {
+        console.warn('Product is not linked to Strapi (no documentId). Updated locally only.')
+        setMessage('تم تحديث المنتج محليًا. المنتج غير مرتبط بـ Strapi')
+      } else {
+        console.warn('Failed to update on Strapi, will update locally only:', apiErr)
+      }
+    }
+
+    // تحديث محلي لضمان التجربة
+    const updatedProductLocal = {
       ...editingProduct,
       price: parseFloat(editingProduct.price),
       quantity: parseInt(editingProduct.quantity),
       updatedAt: new Date().toISOString(),
       updatedBy: `${localStorage.getItem('currentUserEmail') || localStorage.getItem('loggedInUser') || localStorage.getItem('userEmail') || 'Admin'} (Admin)`
     }
+    const updatedProductsLocal = products.map(product => product.id === editingProduct.id ? updatedProductLocal : product)
+    setProducts(updatedProductsLocal)
+    try { localStorage.setItem('ecommerce_products', JSON.stringify(updatedProductsLocal)) } catch {}
 
-    const updatedProducts = products.map(product => 
-      product.id === editingProduct.id ? updatedProduct : product
-    )
-    
-    setProducts(updatedProducts)
-    
-    // تحسين التخزين مع ضغط البيانات
-    try {
-      // Limit products before saving to prevent memory issues
-      const limitedProducts = updatedProducts.slice(-50) // Keep only last 50 products
-      const compressedData = JSON.stringify(limitedProducts)
-      
-      // محاولة التخزين مع معالجة الأخطاء
-      try {
-        localStorage.setItem('ecommerce_products', compressedData)
-      } catch (storageError) {
-        console.warn('Storage error during edit, trying to clear old data:', storageError)
-        
-        // محاولة تنظيف التخزين وإعادة المحاولة
-        try {
-          localStorage.removeItem('ecommerce_products')
-          localStorage.setItem('ecommerce_products', compressedData)
-        } catch (retryError) {
-          console.error('Failed to store even after cleanup:', retryError)
-          throw new Error('Storage is full or not available')
-        }
-      }
-      
-      // التحقق من نجاح التخزين
-      const storedData = localStorage.getItem('ecommerce_products')
-      if (!storedData) {
-        throw new Error('Failed to store products')
-      }
-      
-      console.log(`✅ Successfully updated product. ${limitedProducts.length} products in localStorage`)
-      
-      // إضافة تأكيد إضافي للتخزين
-      const verificationData = JSON.parse(storedData)
-      if (verificationData.length !== limitedProducts.length) {
-        console.warn('Storage verification failed during edit, data may be corrupted')
-      }
-      
-    } catch (error) {
-      console.error('Error updating product:', error)
-      
-      // محاولة حفظ في sessionStorage كبديل
-      try {
-        const fallbackData = JSON.stringify(updatedProducts.slice(-20))
-        sessionStorage.setItem('ecommerce_products_fallback', fallbackData)
-        console.log('✅ Saved to sessionStorage as fallback during edit')
-        setMessage('⚠️ Warning: Product updated in temporary storage. Data may be lost on page refresh.')
-      } catch (fallbackError) {
-        console.error('Fallback storage also failed during edit:', fallbackError)
-        setMessage('❌ Error: Unable to update product. Please try again or clear browser data.')
-      }
-      
-      setTimeout(() => setMessage(''), 8000)
-    }
-    
-    // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
     window.dispatchEvent(new Event('productsUpdated'))
-    
-    setMessage(`✅ Product "${updatedProduct.title}" updated successfully!`)
+    setMessage(`✅ Product "${editingProduct.title}" updated`)
     setEditingProduct(null)
     setShowForm(false)
-    
     setTimeout(() => setMessage(''), 3000)
   }
 
@@ -559,6 +661,20 @@ export default function AddProducts({ darkMode = false }) {
       {message && (
         <div className={`message ${message.includes('successfully') ? 'success' : 'error'}`}>
           {message}
+        </div>
+      )}
+
+      {/* Strapi Products (read-only) */}
+      {!showCategoriesSection && productList && productList.length > 0 && (
+        <div className="products-section" style={{ marginTop: '16px' }}>
+          <div className="products-header">
+            <h2>Strapi Products ({productList.length})</h2>
+          </div>
+          <div className='products-grid'>
+            {productList.map(item => (
+              <ProductItem product={item} key={item.id} />
+            ))}
+          </div>
         </div>
       )}
 

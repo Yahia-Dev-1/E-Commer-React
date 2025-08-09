@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import SEO from './SEO'
 import '../styles/cards.css'
-
 
 // Function to check if current user is admin
 const isCurrentUserAdmin = () => {
@@ -18,6 +17,24 @@ const isCurrentUserAdmin = () => {
 
 // Optimized Card Component with lazy loading images
 function Card({ image, title, description, price, quantity, onAddToCart }) {
+  const [products, setProducts] = useState([])
+
+  useEffect(() => {
+    fetch('http://localhost:1337/api/products?populate=*')
+      .then(res => res.json())
+      .then(data => {
+        // تأكد من شكل البيانات في console
+        console.log(data)
+        // لو البيانات في data.data حسب Strapi 4
+        setProducts(data.data)
+      })
+      .catch(err => console.error(err))
+  }, [])
+
+
+
+  
+
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
 
@@ -48,7 +65,72 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
   const isInStock = safeQuantity > 5;
   const isAdmin = isCurrentUserAdmin();
 
-  return (
+  return (<div>
+
+<div className="cards-container">
+  {products.length === 0 ? (
+    <div className="no-products">
+      <p>No products found</p>
+    </div>
+  ) : (
+    products.map(product => {
+      // تعيين حالة المخزون حسب بيانات المنتج
+      let stockStatusClass = ""; // in-stock, low-stock, out-of-stock
+      if (product.status === "in-stock") stockStatusClass = "in-stock";
+      else if (product.status === "low-stock") stockStatusClass = "low-stock";
+      else if (product.status === "out-of-stock") stockStatusClass = "out-of-stock";
+
+      return (
+        <div key={product.id} className={`card ${product.status === "out-of-stock" ? "out-of-stock" : ""}`}>
+          <div className="card-img">
+            {product.status === "out-of-stock" && (
+              <div className="out-of-stock-overlay">Out of Stock</div>
+            )}
+            {product.img && (
+              <img
+                className="img"
+                src={typeof product.img === "string" ? product.img : product.img.url}
+                alt={product.title}
+              />
+            )}
+          </div>
+
+          <h3 className="card-title">{product.title}</h3>
+          <p className="card-subtitle">{product.description}</p>
+
+    
+
+          <hr className="card-divider" />
+
+          <div className="card-footer">
+            <div className="card-price">
+              <span className="currency-symbol">$</span>
+              <span className="price-value">{product.price}</span>
+              <span className="price-decoration"></span>
+            </div>
+
+            <button 
+          className={`card-btn ${isOutOfStock ? 'disabled' : ''} ${isLowStock ? 'low-stock' : ''} ${isInStock ? 'in-stock' : ''}`} 
+          onClick={handleClick}
+          disabled={isOutOfStock}
+          style={{ 
+            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+            opacity: isOutOfStock ? 0.5 : 1
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="m397.78 316h-205.13a15 15 0 0 1 -14.65-11.67l-34.54-150.48a15 15 0 0 1 14.62-18.36h274.27a15 15 0 0 1 14.65 18.36l-34.6 150.48a15 15 0 0 1 -14.62 11.67zm-193.19-30h181.25l27.67-120.48h-236.6z"></path><path d="m222 450a57.48 57.48 0 1 1 57.48-57.48 57.54 57.54 0 0 1 -57.48 57.48zm0-84.95a27.48 27.48 0 1 0 27.48 27.47 27.5 27.5 0 0 0 -27.48-27.47z"></path><path d="m368.42 450a57.48 57.48 0 1 1 57.48-57.48 57.54 57.54 0 0 1 -57.48 57.48zm0-84.95a27.48 27.48 0 1 0 27.48 27.47 27.5 27.5 0 0 0 -27.48-27.47z"></path><path d="m158.08 165.49a15 15 0 0 1 -14.23-10.26l-25.71-77.23h-47.44a15 15 0 1 1 0-30h58.3a15 15 0 0 1 14.23 10.26l29.13 87.49a15 15 0 0 1 -14.23 19.74z"></path></svg>
+        </button>
+          </div>
+        </div>
+      );
+    })
+  )}
+</div>
+ 
+
+
+
+
     <div className={`card ${isOutOfStock ? 'out-of-stock' : ''}`} style={{ 
       cursor: isOutOfStock ? 'not-allowed' : 'default',
       opacity: isOutOfStock ? 0.6 : 1,
@@ -113,10 +195,10 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
         </button>
       </div>
     </div>
+    </div>
   )
 }
 
-// Filter Button Component
 function FilterButton({ category, isActive, onClick }) {
   return (
     <button 
@@ -326,6 +408,7 @@ export default function Cards({ addToCart, darkMode = false, products = [], prod
       
       
     </div>
+    
     </>
   )
 }

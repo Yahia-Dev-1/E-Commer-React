@@ -5,11 +5,14 @@ import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-ro
 import { HelmetProvider } from 'react-helmet-async';
 import { useState, useEffect, Suspense, lazy } from 'react'
 import database from './utils/database'
+import React from 'react';
+import { ProductsProvider } from './context/ProductsContext';
 
 // Lazy load components for better performance
 const About = lazy(() => import('./components/About'))
 const Services = lazy(() => import('./components/Services'))
 const AddProducts = lazy(() => import('./components/AddProducts'))
+const ProductsApi = lazy(() => import('./components/ProductsApi'))
 const CategoryManagement = lazy(() => import('./components/CategoryManagement'))
 const Cards = lazy(() => import('./components/cards'))
 const Login = lazy(() => import('./components/Login'))
@@ -633,6 +636,7 @@ function AppContent() {
   }
 
   return (
+
     <div className="dark-mode">
       <Nav cartItemsCount={cartCount} user={user} onLogout={handleLogout} darkMode={true} toggleDarkMode={undefined} />
       <Routes>
@@ -712,6 +716,11 @@ function AppContent() {
             />
           </Suspense>
         } />
+        <Route path='/products-api' element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <ProductsApi />
+          </Suspense>
+        } />
         <Route path='/category-management' element={
           <Suspense fallback={<LoadingSpinner />}>
             <CategoryManagement darkMode={true} />
@@ -746,6 +755,7 @@ function AppContent() {
           showAddToCart={true}
         />
       </Suspense>
+      
     </div>
   );
 }
@@ -754,7 +764,9 @@ function App() {
   return (
     <HelmetProvider>
       <BrowserRouter basename="/E-Commer-React">
-        <AppContent />
+        <ProductsProvider>
+          <AppContent />
+        </ProductsProvider>
       </BrowserRouter>
     </HelmetProvider>
   );
