@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import ProductApis from '../apis/ProductApis'
+
 import ProductItem from './ProductItem'
 
 export default function ProductsApi() {

@@ -1,31 +1,33 @@
-import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { getProducts } from '../apis/ProductApis';
 
-export const ProductsContext = createContext();
+const ProductsContext = createContext();
 
 export const ProductsProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
-
-  // رابط الـ API من Strapi
-  const API_URL = "http://localhost:1337/api/products?populate=*";
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProducts();
+    loadProducts();
+    window.addEventListener('productsUpdated', loadProducts);
+    return () => window.removeEventListener('productsUpdated', loadProducts);
   }, []);
 
-  const fetchProducts = async () => {
+  const loadProducts = async () => {
     try {
-      const res = await axios.get(API_URL);
-      // Strapi بيرجع البيانات في res.data.data
-      setProducts(res.data.data);
-    } catch (err) {
-      console.error("Error fetching products:", err);
+      const data = await getProducts();
+      setProducts(data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading products:', error);
     }
   };
 
   return (
-    <ProductsContext.Provider value={{ products, setProducts, fetchProducts }}>
+    <ProductsContext.Provider value={{ products, loading, loadProducts }}>
       {children}
     </ProductsContext.Provider>
   );
 };
+
+export const useProducts = () => useContext(ProductsContext);

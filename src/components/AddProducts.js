@@ -1,9 +1,67 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../styles/AddProducts.css'
-import ProductApis from '../apis/ProductApis'
+import { updateProduct } from '../apis/ProductApis';
+
 import ProductItem from './ProductItem'
 import { normalizeStrapiProduct } from '../apis/normalizeProduct'
+import ProductApis from '../apis/ProductApis'
+
+function EditProductModal({ product, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    title: product.attributes.title,
+    description: product.attributes.description,
+    price: product.attributes.price,
+    stock: product.attributes.stock,
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await updateProduct(product.id, formData);
+      onSave(formData);
+      onClose();
+    } catch (error) {
+      console.error('Error updating product:', error);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Edit Product</h2>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Title"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          />
+          <textarea
+            placeholder="Description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
+          <input
+            type="number"
+            placeholder="Price"
+            value={formData.price}
+            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+          />
+          <input
+            type="number"
+            placeholder="Stock"
+            value={formData.stock}
+            onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+          />
+          <button type="submit">Save</button>
+          <button type="button" onClick={onClose}>Cancel</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function AddProducts({ darkMode = false }) {
   const [productList,setProductList]= useState([])
 	useEffect(()=>{

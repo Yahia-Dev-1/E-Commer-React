@@ -1,67 +1,32 @@
-import axiosClient from './axiosClient'
+import axiosClient from './axiosClient';
 
-// دالة لتنظيف بيانات المنتج
-const normalizeProduct = (product) => ({
-  id: product.id,
-  title: product.attributes.title,
-  description: product.attributes.description,
-  price: product.attributes.price,
-  image: product.attributes.img?.data?.attributes?.url
-    ? `${process.env.REACT_APP_STRAPI_URL}${product.attributes.img.data.attributes.url}`
-    : null,
-})
+const API_BASE_URL = process.env.REACT_APP_STRAPI_URL || 'http://localhost:1337';
 
-const getLatestProducts = async () => {
-  const res = await axiosClient.get('/products?sort=createdAt:desc&populate=*')
-  return res.data.data.map(normalizeProduct)
-}
+export const getProducts = async () => {
+  const response = await axiosClient.get(`${API_BASE_URL}/api/products?populate=*`);
+  return response.data.data;
+};
 
-const getProductById = async (id) => {
-  const res = await axiosClient.get(`/products/${id}?populate=*`)
-  return normalizeProduct(res.data.data)
-}
+export const getProduct = async (id) => {
+  const response = await axiosClient.get(`${API_BASE_URL}/api/products/${id}?populate=*`);
+  return response.data.data;
+};
 
-const getProductByDocumentId = async (documentId) => {
-  const res = await axiosClient.get(`/products/${documentId}?populate=*`)
-  return normalizeProduct(res.data.data)
-}
+export const createProduct = async (product) => {
+  const response = await axiosClient.post(`${API_BASE_URL}/api/products`, {
+    data: product
+  });
+  return response.data.data;
+};
 
-const findProductByDocumentId = async (documentId) => {
-  const res = await axiosClient.get(`/products?filters[documentId][$eq]=${encodeURIComponent(documentId)}&populate=*`)
-  return res.data.data.map(normalizeProduct)
-}
+export const updateProduct = async (id, product) => {
+  const response = await axiosClient.put(`${API_BASE_URL}/api/products/${id}`, {
+    data: product
+  });
+  return response.data.data;
+};
 
-const getProductsByCategory = async (category) => {
-  const res = await axiosClient.get(`/products?filters[category][$eq]=${encodeURIComponent(category)}&populate=*`)
-  return res.data.data.map(normalizeProduct)
-}
-
-const uploadFile = (formData) => axiosClient.post('/upload', formData)
-
-const createProduct = (dataOrFormData) => {
-  if (typeof FormData !== 'undefined' && dataOrFormData instanceof FormData) {
-    return axiosClient.post('/products', dataOrFormData)
-  }
-  return axiosClient.post('/products', { data: dataOrFormData })
-}
-
-const updateProduct = (id, dataOrFormData) => {
-  if (typeof FormData !== 'undefined' && dataOrFormData instanceof FormData) {
-    return axiosClient.put(`/products/${id}`, dataOrFormData)
-  }
-  return axiosClient.put(`/products/${id}`, { data: dataOrFormData })
-}
-
-const deleteProduct = (id) => axiosClient.delete(`/products/${id}`)
-
-export default {
-  getLatestProducts,
-  getProductById,
-  getProductByDocumentId,
-  findProductByDocumentId,
-  getProductsByCategory,
-  uploadFile,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-}
+export const deleteProduct = async (id) => {
+  const response = await axiosClient.delete(`${API_BASE_URL}/api/products/${id}`);
+  return response.data;
+};

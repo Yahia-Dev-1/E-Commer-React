@@ -2,8 +2,70 @@ import React, { useState, useEffect } from 'react'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import SEO from './SEO'
 import '../styles/cards.css'
+import { getProducts, updateProduct } from '../apis/ProductApis';
 
-// Function to check if current user is admin
+
+function Cards({ addToCart, darkMode = false }) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingProduct, setEditingProduct] = useState(null);
+
+  useEffect(() => {
+    loadProducts();
+    window.addEventListener('productsUpdated', loadProducts);
+    return () => window.removeEventListener('productsUpdated', loadProducts);
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      const data = await getProducts();
+      setProducts(data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading products:', error);
+    }
+  };
+
+  const handleEditProduct = async (product) => {
+    setEditingProduct(product);
+  };
+
+  const handleSaveProduct = async (updatedProduct) => {
+    try {
+      await updateProduct(updatedProduct.id, updatedProduct);
+      setEditingProduct(null);
+      loadProducts();
+    } catch (error) {
+      console.error('Error updating product:', error);
+    }
+  };
+
+  return (
+    <div className={`cards-section ${darkMode ? 'dark-mode' : ''}`}>
+      {loading ? (
+        <div className="loading">Loading products...</div>
+      ) : (
+        <div className="products-grid">
+          {products.map(product => (
+            <div key={product.id} className="product-card">
+              <img 
+                src={product.attributes.image?.data?.attributes?.url || 'placeholder.jpg'} 
+                alt={product.attributes.title} 
+                className="product-image"
+              />
+              <h3>{product.attributes.title}</h3>
+              <p>{product.attributes.description}</p>
+              <p>Price: ${product.attributes.price}</p>
+              <p>Stock: {product.attributes.stock}</p>
+              <button onClick={() => addToCart(product)}>Add to Cart</button>
+              <button onClick={() => handleEditProduct(product)}>Edit</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}// Function to check if current user is admin
 const isCurrentUserAdmin = () => {
   const currentUserEmail = localStorage.getItem('currentUserEmail');
   if (!currentUserEmail) return false;
@@ -15,23 +77,48 @@ const isCurrentUserAdmin = () => {
   return allAdminEmails.includes(currentUserEmail);
 };
 
+function ProductsPage() {
+  const [products, setProducts] = useState(() => {
+    const saved = localStorage.getItem('ecommerce_products');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    function handleProductsUpdated() {
+      const saved = localStorage.getItem('ecommerce_products');
+      if (saved) {
+        setProducts(JSON.parse(saved));
+      }
+    }
+
+    window.addEventListener('productsUpdated', handleProductsUpdated);
+
+    // نظف الاستماع عند إلغاء التركيب
+    return () => {
+      window.removeEventListener('productsUpdated', handleProductsUpdated);
+    };
+  }, []);
+
+  // باقي الكود اللي يعرض المنتجات
+  return (
+    <div>
+      <h1>Products ({products.length})</h1>
+      <div className="products-grid">
+        {products.map(p => (
+          <div key={p.id} className="product-card">
+            <h3>{p.title}</h3>
+            <p>Price: ${p.price}</p>
+            {/* بقية التفاصيل */}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Optimized Card Component with lazy loading images
 function Card({ image, title, description, price, quantity, onAddToCart }) {
   const [products, setProducts] = useState([])
-
-  useEffect(() => {
-    fetch('http://localhost:1337/api/products?populate=*')
-      .then(res => res.json())
-      .then(data => {
-        // تأكد من شكل البيانات في console
-        console.log(data)
-        // لو البيانات في data.data حسب Strapi 4
-        setProducts(data.data)
-      })
-      .catch(err => console.error(err))
-  }, [])
-
-
 
   
 
