@@ -6,7 +6,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { useState, useEffect, Suspense, lazy } from 'react'
 import database from './utils/database'
 import React from 'react';
-import { ProductsProvider } from './context/ProductsContext';
+// import { ProductsProvider } from './context/ProductsContext';
 
 // Lazy load components for better performance
 const About = lazy(() => import('./components/About'))
@@ -64,65 +64,65 @@ function AppContent() {
 
   // Load products function
   const loadProducts = () => {
-    try {
-      // محاولة تحميل من localStorage أولاً
-      let savedProducts = []
-      
-      try {
-        const localStorageData = localStorage.getItem('ecommerce_products')
-        if (localStorageData) {
-          savedProducts = JSON.parse(localStorageData)
-          console.log('🔍 App.js: Raw products from localStorage:', savedProducts)
-        }
-      } catch (localStorageError) {
-        console.warn('localStorage error, trying sessionStorage:', localStorageError)
-      }
-      
-      // إذا لم توجد بيانات في localStorage، جرب sessionStorage
-      if (!savedProducts || savedProducts.length === 0) {
+    // جلب المنتجات من Strapi أولاً
+    fetch('http://localhost:1337/api/products?populate=*')
+      .then(res => res.json())
+      .then(data => {
+        const productsFromStrapi = Array.isArray(data.data)
+          ? data.data.map(item => {
+              let imageUrl = '';
+              // استخدم img بدلاً من image
+              if (
+                item.attributes.img &&
+                item.attributes.img.url
+              ) {
+                imageUrl = item.attributes.img.url.startsWith('http')
+                  ? item.attributes.img.url
+                  : `http://localhost:1337${item.attributes.img.url}`;
+              } else if (
+                item.attributes.img &&
+                item.attributes.img.formats &&
+                item.attributes.img.formats.thumbnail &&
+                item.attributes.img.formats.thumbnail.url
+              ) {
+                imageUrl = item.attributes.img.formats.thumbnail.url.startsWith('http')
+                  ? item.attributes.img.formats.thumbnail.url
+                  : `http://localhost:1337${item.attributes.img.formats.thumbnail.url}`;
+              }
+              return {
+                id: item.id,
+                title: item.attributes.title,
+                price: item.attributes.price,
+                quantity: item.attributes.stock || 1,
+                image: imageUrl,
+                description: item.attributes.description || '',
+                category: item.attributes.category && item.attributes.category.name ? item.attributes.category.name : 'other',
+                createdAt: item.attributes.createdAt || '',
+                updatedAt: item.attributes.updatedAt || '',
+              };
+            })
+          : [];
+        setProducts(productsFromStrapi);
+        localStorage.setItem('ecommerce_products', JSON.stringify(productsFromStrapi));
+      })
+      .catch(err => {
+        // إذا فشل الجلب من Strapi استخدم البيانات المحلية
         try {
-          const sessionStorageData = sessionStorage.getItem('ecommerce_products_fallback')
-          if (sessionStorageData) {
-            savedProducts = JSON.parse(sessionStorageData)
-            console.log('🔍 App.js: Raw products from sessionStorage fallback:', savedProducts)
+          const localStorageData = localStorage.getItem('ecommerce_products');
+          if (localStorageData) {
+            const allProducts = JSON.parse(localStorageData);
+            const validProducts = Array.isArray(allProducts)
+              ? allProducts.filter(p => p && p.id && p.title && p.price !== undefined && p.quantity !== undefined && p.category && p.createdAt)
+              : [];
+            setProducts(validProducts);
+          } else {
+            setProducts([]);
           }
-        } catch (sessionStorageError) {
-          console.warn('sessionStorage error:', sessionStorageError)
+        } catch (error) {
+          setProducts([]);
+          console.error('خطأ في قراءة المنتجات من localStorage:', error);
         }
-      }
-      
-      // فلترة المنتجات الصحيحة
-      const validProducts = savedProducts.filter(product => 
-        product && 
-        product.id && 
-        product.title && 
-        product.description && 
-        product.price !== undefined && 
-        product.category && 
-        product.quantity !== undefined
-      )
-      
-      console.log('🔍 App.js: Valid products after filtering:', validProducts)
-      console.log('🔍 App.js: Product titles:', validProducts.map(p => p.title))
-      
-      setProducts(validProducts)
-      console.log(`📦 App.js: Loaded ${validProducts.length} products`)
-      
-      // إذا تم تحميل من sessionStorage، حاول نقل البيانات إلى localStorage
-      if (validProducts.length > 0 && sessionStorage.getItem('ecommerce_products_fallback')) {
-        try {
-          localStorage.setItem('ecommerce_products', JSON.stringify(validProducts))
-          sessionStorage.removeItem('ecommerce_products_fallback')
-          console.log('✅ Successfully migrated products from sessionStorage to localStorage')
-        } catch (migrationError) {
-          console.warn('Failed to migrate from sessionStorage:', migrationError)
-        }
-      }
-      
-    } catch (error) {
-      console.error('Error loading products in App.js:', error)
-      setProducts([])
-    }
+      });
   }
 
   // Handle products update
@@ -764,9 +764,7 @@ function App() {
   return (
     <HelmetProvider>
       <BrowserRouter basename="/E-Commer-React">
-        <ProductsProvider>
-          <AppContent />
-        </ProductsProvider>
+        <AppContent />
       </BrowserRouter>
     </HelmetProvider>
   );

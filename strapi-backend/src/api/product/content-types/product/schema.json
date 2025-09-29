@@ -38,7 +38,8 @@
     "category": {
       "type": "relation",
       "relation": "manyToMany",
-      "target": "api::catecory.category"
+      "target": "api::catecory.catecory",
+      "inversedBy": "products"
     }
   }
 }

@@ -1,71 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import SEO from './SEO'
 import '../styles/cards.css'
-import { getProducts, updateProduct } from '../apis/ProductApis';
 
-
-function Cards({ addToCart, darkMode = false }) {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editingProduct, setEditingProduct] = useState(null);
-
-  useEffect(() => {
-    loadProducts();
-    window.addEventListener('productsUpdated', loadProducts);
-    return () => window.removeEventListener('productsUpdated', loadProducts);
-  }, []);
-
-  const loadProducts = async () => {
-    try {
-      const data = await getProducts();
-      setProducts(data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading products:', error);
-    }
-  };
-
-  const handleEditProduct = async (product) => {
-    setEditingProduct(product);
-  };
-
-  const handleSaveProduct = async (updatedProduct) => {
-    try {
-      await updateProduct(updatedProduct.id, updatedProduct);
-      setEditingProduct(null);
-      loadProducts();
-    } catch (error) {
-      console.error('Error updating product:', error);
-    }
-  };
-
-  return (
-    <div className={`cards-section ${darkMode ? 'dark-mode' : ''}`}>
-      {loading ? (
-        <div className="loading">Loading products...</div>
-      ) : (
-        <div className="products-grid">
-          {products.map(product => (
-            <div key={product.id} className="product-card">
-              <img 
-                src={product.attributes.image?.data?.attributes?.url || 'placeholder.jpg'} 
-                alt={product.attributes.title} 
-                className="product-image"
-              />
-              <h3>{product.attributes.title}</h3>
-              <p>{product.attributes.description}</p>
-              <p>Price: ${product.attributes.price}</p>
-              <p>Stock: {product.attributes.stock}</p>
-              <button onClick={() => addToCart(product)}>Add to Cart</button>
-              <button onClick={() => handleEditProduct(product)}>Edit</button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}// Function to check if current user is admin
+// Function to check if current user is admin
 const isCurrentUserAdmin = () => {
   const currentUserEmail = localStorage.getItem('currentUserEmail');
   if (!currentUserEmail) return false;
@@ -77,69 +15,14 @@ const isCurrentUserAdmin = () => {
   return allAdminEmails.includes(currentUserEmail);
 };
 
-function ProductsPage() {
-  const [products, setProducts] = useState(() => {
-    const saved = localStorage.getItem('ecommerce_products');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    function handleProductsUpdated() {
-      const saved = localStorage.getItem('ecommerce_products');
-      if (saved) {
-        setProducts(JSON.parse(saved));
-      }
-    }
-
-    window.addEventListener('productsUpdated', handleProductsUpdated);
-
-    // نظف الاستماع عند إلغاء التركيب
-    return () => {
-      window.removeEventListener('productsUpdated', handleProductsUpdated);
-    };
-  }, []);
-
-  // باقي الكود اللي يعرض المنتجات
-  return (
-    <div>
-      <h1>Products ({products.length})</h1>
-      <div className="products-grid">
-        {products.map(p => (
-          <div key={p.id} className="product-card">
-            <h3>{p.title}</h3>
-            <p>Price: ${p.price}</p>
-            {/* بقية التفاصيل */}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // Optimized Card Component with lazy loading images
 function Card({ image, title, description, price, quantity, onAddToCart }) {
-  const [products, setProducts] = useState([])
-
-  
-
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [imageError, setImageError] = useState(false)
-
   // تأكد من وجود جميع الخصائص المطلوبة
   const safeTitle = title || 'Untitled Product';
   const safeDescription = description || 'No description available';
   const safePrice = price || '0.00';
   const safeQuantity = typeof quantity === 'number' ? quantity : 0;
   const safeImage = image || 'https://via.placeholder.com/400x400?text=No+Image';
-
-  const handleImageLoad = () => {
-    setImageLoaded(true)
-  }
-
-  const handleImageError = (e) => {
-    setImageError(true)
-    e.target.src = 'https://via.placeholder.com/400x400?text=Image+Not+Found'
-  }
 
   const handleClick = () => {
     if (safeQuantity > 0) {
@@ -152,99 +35,20 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
   const isInStock = safeQuantity > 5;
   const isAdmin = isCurrentUserAdmin();
 
-  return (<div>
-
-<div className="cards-container">
-  {products.length === 0 ? (
-    <div className="no-products">
-      <p>No products found</p>
-    </div>
-  ) : (
-    products.map(product => {
-      // تعيين حالة المخزون حسب بيانات المنتج
-      let stockStatusClass = ""; // in-stock, low-stock, out-of-stock
-      if (product.status === "in-stock") stockStatusClass = "in-stock";
-      else if (product.status === "low-stock") stockStatusClass = "low-stock";
-      else if (product.status === "out-of-stock") stockStatusClass = "out-of-stock";
-
-      return (
-        <div key={product.id} className={`card ${product.status === "out-of-stock" ? "out-of-stock" : ""}`}>
-          <div className="card-img">
-            {product.status === "out-of-stock" && (
-              <div className="out-of-stock-overlay">Out of Stock</div>
-            )}
-            {product.img && (
-              <img
-                className="img"
-                src={typeof product.img === "string" ? product.img : product.img.url}
-                alt={product.title}
-              />
-            )}
-          </div>
-
-          <h3 className="card-title">{product.title}</h3>
-          <p className="card-subtitle">{product.description}</p>
-
-    
-
-          <hr className="card-divider" />
-
-          <div className="card-footer">
-            <div className="card-price">
-              <span className="currency-symbol">$</span>
-              <span className="price-value">{product.price}</span>
-              <span className="price-decoration"></span>
-            </div>
-
-            <button 
-          className={`card-btn ${isOutOfStock ? 'disabled' : ''} ${isLowStock ? 'low-stock' : ''} ${isInStock ? 'in-stock' : ''}`} 
-          onClick={handleClick}
-          disabled={isOutOfStock}
-          style={{ 
-            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-            opacity: isOutOfStock ? 0.5 : 1
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="m397.78 316h-205.13a15 15 0 0 1 -14.65-11.67l-34.54-150.48a15 15 0 0 1 14.62-18.36h274.27a15 15 0 0 1 14.65 18.36l-34.6 150.48a15 15 0 0 1 -14.62 11.67zm-193.19-30h181.25l27.67-120.48h-236.6z"></path><path d="m222 450a57.48 57.48 0 1 1 57.48-57.48 57.54 57.54 0 0 1 -57.48 57.48zm0-84.95a27.48 27.48 0 1 0 27.48 27.47 27.5 27.5 0 0 0 -27.48-27.47z"></path><path d="m368.42 450a57.48 57.48 0 1 1 57.48-57.48 57.54 57.54 0 0 1 -57.48 57.48zm0-84.95a27.48 27.48 0 1 0 27.48 27.47 27.5 27.5 0 0 0 -27.48-27.47z"></path><path d="m158.08 165.49a15 15 0 0 1 -14.23-10.26l-25.71-77.23h-47.44a15 15 0 1 1 0-30h58.3a15 15 0 0 1 14.23 10.26l29.13 87.49a15 15 0 0 1 -14.23 19.74z"></path></svg>
-        </button>
-          </div>
-        </div>
-      );
-    })
-  )}
-</div>
- 
-
-
-
-
+  return (
     <div className={`card ${isOutOfStock ? 'out-of-stock' : ''}`} style={{ 
       cursor: isOutOfStock ? 'not-allowed' : 'default',
       opacity: isOutOfStock ? 0.6 : 1,
       pointerEvents: isOutOfStock ? 'none' : 'auto'
     }}>
       <div className="card-img">
-        {/* Placeholder while image loads */}
-        {!imageLoaded && !imageError && (
-          <div className="image-placeholder" style={{
-            width: '100%',
-            height: '200px',
-            background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
-            backgroundSize: '200% 100%',
-            animation: 'loading 1.5s infinite',
-            borderRadius: '8px'
-          }}></div>
-        )}
         <img 
           className="img" 
           src={safeImage} 
           alt={safeTitle}
           loading="lazy"
-          onLoad={handleImageLoad}
-          onError={handleImageError}
           style={{ 
             filter: isOutOfStock ? 'grayscale(100%)' : 'none',
-            display: imageLoaded && !imageError ? 'block' : 'none'
           }}
         />
         {isOutOfStock && (
@@ -282,7 +86,6 @@ function Card({ image, title, description, price, quantity, onAddToCart }) {
         </button>
       </div>
     </div>
-    </div>
   )
 }
 
@@ -299,7 +102,6 @@ function FilterButton({ category, isActive, onClick }) {
 
 // Main Cards Container Component
 export default function Cards({ addToCart, darkMode = false, products = [], productsVersion = 0 }) {
-  // const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -307,13 +109,13 @@ export default function Cards({ addToCart, darkMode = false, products = [], prod
   console.log(`📦 Cards: Received ${products.length} products from App.js (version: ${productsVersion})`)
   
   // Log when products change
-  React.useEffect(() => {
+  useEffect(() => {
     console.log(`🔄 Cards: Products updated - ${products.length} products (version: ${productsVersion})`)
     console.log('📋 Products titles:', products.map(p => p.title))
   }, [products, productsVersion])
 
   // Get unique categories (memoized)
-  const categories = React.useMemo(() => {
+  const categories = useMemo(() => {
     try {
       const savedCategories = JSON.parse(localStorage.getItem('ecommerce_categories') || '[]');
       if (savedCategories.length === 0) {
@@ -326,7 +128,7 @@ export default function Cards({ addToCart, darkMode = false, products = [], prod
   }, [products])
 
   // Filter products based on active filter and search term (memoized)
-  const filteredProducts = React.useMemo(() => {
+  const filteredProducts = useMemo(() => {
     return products.filter(product => {
       const matchesCategory = activeFilter === 'All' || product.category === activeFilter
       const matchesSearch = (product.title && product.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
