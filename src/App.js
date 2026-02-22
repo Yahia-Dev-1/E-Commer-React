@@ -63,7 +63,7 @@ function AppContent() {
   // Dark mode is always enabled
 
   // Load products function
-  const loadProducts = () => {
+  const loadProducts = useCallback(() => {
     // Try to load products from local API first
     fetch('/api/products')
       .then(res => res.json())
@@ -99,10 +99,9 @@ function AppContent() {
           }
         } catch (error) {
           setProducts([]);
-          console.error('Error loading products from localStorage:', error);
         }
       });
-  }
+  }, []);
 
   // Handle products update
   const handleProductsUpdate = useCallback(() => {
@@ -114,7 +113,7 @@ function AppContent() {
       loadProducts()
       setProductsVersion(prev => prev + 1)
     }, 100)
-  }, [loadProducts, setProductsVersion])
+  }, [loadProducts])
 
   // Check for saved user and cart data on component mount
   useEffect(() => {

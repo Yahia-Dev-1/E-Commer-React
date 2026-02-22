@@ -207,7 +207,7 @@ export default function AddProducts({ darkMode = false }) {
       document.removeEventListener('mousedown', handleClickOutside)
       clearTimeout(window.storageTimeout)
     }
-  }, [navigate])
+  }, [navigate, products])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
