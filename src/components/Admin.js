@@ -36,16 +36,13 @@ export default function Admin({ darkMode = true }) {
       
       if (userExists) {
         setIsAuthorized(true);
-        console.log('Authorization granted');
       } else {
         addProtectedAdmins();
         setTimeout(() => {
           setIsAuthorized(true);
-          console.log('Authorization granted after adding user');
         }, 500);
       }
     } else {
-      console.log('User not in admin list, authorization denied');
       setIsAuthorized(false);
     }
   }, []);
@@ -77,9 +74,8 @@ export default function Admin({ darkMode = true }) {
             password: admin.password,
             name: admin.name
           });
-          console.log(`Added protected admin: ${admin.email}`);
         } catch (error) {
-          console.log(`Protected admin ${admin.email} already exists or error occurred:`, error.message);
+          // Handle error silently or show in UI if needed
         }
       }
     });
@@ -134,9 +130,8 @@ export default function Admin({ darkMode = true }) {
               password: admin.password,
               name: admin.name
             });
-            console.log(`Initialized protected admin: ${admin.email}`);
           } catch (error) {
-            console.log(`Protected admin ${admin.email} already exists:`, error.message);
+            // Handle error silently or show in UI if needed
           }
         }
 
@@ -298,7 +293,6 @@ export default function Admin({ darkMode = true }) {
       });
       
       localStorage.setItem('ecommerce_products', JSON.stringify(existingProducts));
-      console.log('Product quantities restored after order deletion');
     } catch (error) {
       console.error('Error restoring product quantities:', error);
     }

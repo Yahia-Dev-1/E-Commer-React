@@ -64,49 +64,28 @@ function AppContent() {
 
   // Load products function
   const loadProducts = () => {
-    // جلب المنتجات من Strapi أولاً
-    fetch('http://localhost:1337/api/products?populate=*')
+    // Try to load products from local API first
+    fetch('/api/products')
       .then(res => res.json())
       .then(data => {
-        const productsFromStrapi = Array.isArray(data.data)
-          ? data.data.map(item => {
-              let imageUrl = '';
-              // استخدم img بدلاً من image
-              if (
-                item.attributes.img &&
-                item.attributes.img.url
-              ) {
-                imageUrl = item.attributes.img.url.startsWith('http')
-                  ? item.attributes.img.url
-                  : `http://localhost:1337${item.attributes.img.url}`;
-              } else if (
-                item.attributes.img &&
-                item.attributes.img.formats &&
-                item.attributes.img.formats.thumbnail &&
-                item.attributes.img.formats.thumbnail.url
-              ) {
-                imageUrl = item.attributes.img.formats.thumbnail.url.startsWith('http')
-                  ? item.attributes.img.formats.thumbnail.url
-                  : `http://localhost:1337${item.attributes.img.formats.thumbnail.url}`;
-              }
-              return {
-                id: item.id,
-                title: item.attributes.title,
-                price: item.attributes.price,
-                quantity: item.attributes.stock || 1,
-                image: imageUrl,
-                description: item.attributes.description || '',
-                category: item.attributes.category && item.attributes.category.name ? item.attributes.category.name : 'other',
-                createdAt: item.attributes.createdAt || '',
-                updatedAt: item.attributes.updatedAt || '',
-              };
-            })
+        const products = Array.isArray(data)
+          ? data.map(item => ({
+              id: item.id,
+              title: item.title || item.name,
+              price: item.price,
+              quantity: item.quantity || item.stock || 1,
+              image: item.image || item.img || item.imageUrl,
+              description: item.description,
+              category: item.category || 'other',
+              createdAt: item.createdAt || item.created_at || new Date().toISOString(),
+              updatedAt: item.updatedAt || item.updated_at || new Date().toISOString(),
+            }))
           : [];
-        setProducts(productsFromStrapi);
-        localStorage.setItem('ecommerce_products', JSON.stringify(productsFromStrapi));
+        setProducts(products);
+        localStorage.setItem('ecommerce_products', JSON.stringify(products));
       })
       .catch(err => {
-        // إذا فشل الجلب من Strapi استخدم البيانات المحلية
+        // If API fails, use local storage data
         try {
           const localStorageData = localStorage.getItem('ecommerce_products');
           if (localStorageData) {
@@ -120,23 +99,20 @@ function AppContent() {
           }
         } catch (error) {
           setProducts([]);
-          console.error('خطأ في قراءة المنتجات من localStorage:', error);
+          console.error('Error loading products from localStorage:', error);
         }
       });
   }
 
   // Handle products update
   const handleProductsUpdate = () => {
-    console.log('🔄 App.js: Products updated, reloading...')
     // Reload immediately and also with delay to ensure we get the latest data
     loadProducts()
     setProductsVersion(prev => prev + 1)
-    console.log('✅ App.js: Products reloaded immediately')
     
     setTimeout(() => {
       loadProducts()
       setProductsVersion(prev => prev + 1)
-      console.log('✅ App.js: Products reloaded with delay')
     }, 100)
   }
 
@@ -153,9 +129,8 @@ function AppContent() {
               password: 'admin123',
               name: 'Admin Test'
             });
-            console.log('Created admin-test@gmail.com user in App.js');
           } catch (error) {
-            console.log('admin-test@gmail.com already exists:', error.message);
+            // Admin user already exists, which is fine
           }
         }
 
@@ -208,7 +183,6 @@ function AppContent() {
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'ecommerce_products') {
-        console.log('🔄 App.js: localStorage changed, reloading products...')
         loadProducts()
         setProductsVersion(prev => prev + 1)
       }
@@ -322,7 +296,7 @@ function AppContent() {
       
       // إذا كانت الكمية 0، المنتج نفذ مخزونه
       if (quantity === 0) {
-        console.log(`Product ${product.title} is out of stock`)
+        // Product is out of stock
       }
       
       return quantity
@@ -445,7 +419,7 @@ function AppContent() {
         }
       })
       
-      console.log('LocalStorage cleaned successfully')
+
     } catch (error) {
       console.error('Error cleaning localStorage:', error)
     }
@@ -522,7 +496,7 @@ function AppContent() {
       // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
       window.dispatchEvent(new Event('productsUpdated'))
       
-      console.log('Product quantities updated after purchase')
+
       
       // إظهار رسالة للمنتجات التي نفدت مخزونها (تم إزالتها)
       // if (outOfStockProducts.length > 0) {

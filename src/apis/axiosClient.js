@@ -1,13 +1,13 @@
 import axios from 'axios'
 
-const apiUrl = process.env.REACT_APP_STRAPI_URL || 'http://localhost:1337/api'
-const apiToken = process.env.REACT_APP_STRAPI_TOKEN
+// Using local API endpoints instead of Strapi
+const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001/api'
 
 const axiosClient = axios.create({
   baseURL: apiUrl,
-  headers: apiToken
-    ? { Authorization: `Bearer ${apiToken}` }
-    : {}
+  headers: {
+    'Content-Type': 'application/json'
+  }
 })
 
 export default axiosClient

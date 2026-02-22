@@ -106,12 +106,10 @@ export default function Cards({ addToCart, darkMode = false, products = [], prod
   const [searchTerm, setSearchTerm] = useState('')
 
   // Products are now passed from App.js, no need to load from localStorage
-  console.log(`📦 Cards: Received ${products.length} products from App.js (version: ${productsVersion})`)
   
   // Log when products change
   useEffect(() => {
-    console.log(`🔄 Cards: Products updated - ${products.length} products (version: ${productsVersion})`)
-    console.log('📋 Products titles:', products.map(p => p.title))
+    // Removed console logs for production
   }, [products, productsVersion])
 
   // Get unique categories (memoized)
@@ -151,7 +149,6 @@ export default function Cards({ addToCart, darkMode = false, products = [], prod
 
   // Function to refresh products (now triggers App.js to reload)
   const refreshProducts = () => {
-    console.log('🔄 Cards: Requesting refresh from App.js...')
     window.dispatchEvent(new CustomEvent('productsUpdated'))
   }
 
@@ -163,7 +160,6 @@ export default function Cards({ addToCart, darkMode = false, products = [], prod
         localStorage.removeItem('has_default_products')
         // Trigger App.js to reload products
         window.dispatchEvent(new CustomEvent('productsUpdated'))
-        console.log('🗑️ All products cleared from localStorage')
         alert('All products have been cleared successfully!')
       } catch (error) {
         console.error('Error clearing products:', error)

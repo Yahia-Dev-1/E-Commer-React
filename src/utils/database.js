@@ -95,12 +95,10 @@ class Database {
           };
           users.push(newAdmin);
           updated = true;
-          console.log(`Added missing protected admin: ${admin.email}`);
         } else if (!existingUser.isProtected) {
           // Update existing user to be protected
           existingUser.isProtected = true;
           updated = true;
-          console.log(`Updated user to protected admin: ${admin.email}`);
         }
 
         // Ensure admin email is in admin list
@@ -113,7 +111,6 @@ class Database {
       if (updated) {
         localStorage.setItem(this.usersKey, JSON.stringify(users));
         localStorage.setItem('admin_emails', JSON.stringify(adminEmails));
-        console.log('Protected admins ensured successfully');
       }
     } catch (error) {
       console.error('Error ensuring protected admins:', error);
@@ -164,8 +161,6 @@ class Database {
       localStorage.setItem(this.usersKey, JSON.stringify(users));
       localStorage.setItem(this.ordersKey, JSON.stringify(orders));
       this.saveLastSaveTime();
-      
-      console.log('All data saved successfully');
     } catch (error) {
       console.error('Error saving data:', error);
     }
@@ -494,7 +489,6 @@ class Database {
       localStorage.setItem(this.usersKey, JSON.stringify(filteredUsers));
       localStorage.setItem('admin_emails', JSON.stringify(updatedAdminEmails));
       
-      console.log('Protected admins reset successfully');
       return true;
     } catch (error) {
       console.error('Error resetting protected admins:', error);

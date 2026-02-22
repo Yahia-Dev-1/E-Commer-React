@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/AddProducts.css';
 import emailjs from 'emailjs-com';
+import productStorage from '../utils/productStorage';
 // import { updateProduct, createProduct, getProducts, getProduct, deleteProduct } from '../apis/ProductApis';
 // import ProductItem from './ProductItem';
-// import { normalizeStrapiProduct } from '../apis/normalizeProduct';
+// import { normalizeProduct } from '../apis/normalizeProduct';
 
 // دالة لإرسال بريد إلكتروني عند رفض الطلب (مثال باستخدام EmailJS)
 function sendRejectionEmail(userEmail, productTitle) {
@@ -20,7 +21,7 @@ function sendRejectionEmail(userEmail, productTitle) {
 
   emailjs.send(serviceID, templateID, templateParams, userID)
     .then((response) => {
-      console.log('Email sent successfully!', response.status, response.text);
+      // Email sent successfully
     }, (err) => {
       console.error('Failed to send email:', err);
     });
@@ -53,15 +54,9 @@ function EditProductModal({ product, onClose, onSave }) {
 export default function AddProducts({ darkMode = false }) {
   const [productList,setProductList]= useState([])
   useEffect(()=>{
-    // تحميل المنتجات من localStorage فقط
-    try {
-      const storedProducts = localStorage.getItem('ecommerce_products')
-      if (storedProducts) {
-        setProductList(JSON.parse(storedProducts))
-      }
-    } catch (e) {
-      setProductList([])
-    }
+    // تحميل المنتجات من نظام التخزين المحسن
+    const products = productStorage.getProducts();
+    setProductList(products);
   },[])
 	
   const navigate = useNavigate()
@@ -117,6 +112,9 @@ export default function AddProducts({ darkMode = false }) {
       });
     };
 
+    // Validate and clean data on load
+    productStorage.validateData();
+
     // Check if user is logged in - try multiple possible keys
     const currentUserEmail = localStorage.getItem('currentUserEmail') || 
                             localStorage.getItem('loggedInUser') || 
@@ -164,7 +162,6 @@ export default function AddProducts({ darkMode = false }) {
     }
 
     setUser(currentUser)
-
     loadProducts()
     loadCategories()
     
@@ -174,16 +171,7 @@ export default function AddProducts({ darkMode = false }) {
     }, 100);
     
     // Auto-cleanup on page load to prevent memory issues
-    try {
-      const products = JSON.parse(localStorage.getItem('ecommerce_products') || '[]')
-      if (products.length > 50) {
-        const limitedProducts = products.slice(-50)
-        localStorage.setItem('ecommerce_products', JSON.stringify(limitedProducts))
-        console.log('🧹 Auto-cleanup: Reduced products from', products.length, 'to', limitedProducts.length)
-      }
-    } catch (error) {
-      console.error('Error during auto-cleanup:', error)
-    }
+    productStorage.cleanup();
 
     // تنظيف التخزين لمنع مشاكل الذاكرة
     cleanupStorage()
@@ -221,47 +209,29 @@ export default function AddProducts({ darkMode = false }) {
 
   const loadProducts = () => {
     try {
-      const storedProducts = localStorage.getItem('ecommerce_products')
-      if (storedProducts) {
-        const parsedProducts = JSON.parse(storedProducts)
-        setProducts(parsedProducts)
-      }
+      const products = productStorage.getProducts();
+      setProducts(products);
     } catch (error) {
-      console.error('Error loading products:', error)
-      setProducts([])
+      console.error('Error loading products:', error);
+      setProducts([]);
     }
   }
 
   const loadCategories = () => {
     try {
-      const storedCategories = localStorage.getItem('ecommerce_categories')
-      if (storedCategories) {
-        const parsedCategories = JSON.parse(storedCategories)
-        setCategories(parsedCategories)
-      }
+      const categories = productStorage.getCategories();
+      setCategories(categories);
     } catch (error) {
-      console.error('Error loading categories:', error)
+      console.error('Error loading categories:', error);
+      setCategories(['electronics', 'clothing', 'books', 'home', 'sports', 'other']);
     }
   }
 
   // دالة لتنظيف التخزين
   const cleanupStorage = () => {
     try {
-      // تنظيف البيانات القديمة
-      const keysToClean = [
-        'ecommerce_products_old',
-        'ecommerce_categories_old',
-        'cartItems_old',
-        'users_old'
-      ]
-      
-      keysToClean.forEach(key => {
-        try {
-          localStorage.removeItem(key)
-        } catch (e) {
-          console.warn(`Failed to remove ${key}:`, e)
-        }
-      })
+      // استخدام وظيفة التنظيف من النظام المحسن
+      productStorage.cleanup();
       
       // تنظيف sessionStorage
       try {
@@ -270,7 +240,6 @@ export default function AddProducts({ darkMode = false }) {
         console.warn('Failed to clear sessionStorage:', e)
       }
       
-      console.log('✅ Storage cleanup completed')
     } catch (error) {
       console.error('Error during storage cleanup:', error)
     }
@@ -300,7 +269,6 @@ export default function AddProducts({ darkMode = false }) {
       return
     }
 
-
     const product = {
       id: Date.now(),
       title: newProduct.title || '',
@@ -320,79 +288,26 @@ export default function AddProducts({ darkMode = false }) {
     const updatedProducts = [...products, product]
     setProducts(updatedProducts)
     
-    // تحسين التخزين مع ضغط البيانات
-    try {
-      // تحسين البيانات قبل التخزين
-      const optimizedProducts = updatedProducts.map(product => ({
-        id: product.id,
-        title: product.title,
-        price: product.price,
-        quantity: product.quantity,
-        image: product.image,
-        description: product.description,
-        category: product.category,
-        createdAt: product.createdAt
-      }))
+    // حفظ المنتج الجديد باستخدام النظام المحسن
+    const success = productStorage.addProduct(product);
+    
+    if (success) {
+      // تحديث حالة المكون
+      const updatedProducts = [...products, product];
+      setProducts(updatedProducts);
       
-      // Limit products before saving to prevent memory issues
-      const limitedProducts = optimizedProducts.slice(-50) // Keep only last 50 products
-      const compressedData = JSON.stringify(limitedProducts)
+      // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
+      window.dispatchEvent(new Event('productsUpdated'));
       
-      // محاولة التخزين مع معالجة الأخطاء
-      try {
-        localStorage.setItem('ecommerce_products', compressedData)
-      } catch (storageError) {
-        console.warn('Storage error, trying to clear old data:', storageError)
-        
-        // محاولة تنظيف التخزين وإعادة المحاولة
-        try {
-          localStorage.removeItem('ecommerce_products')
-          localStorage.setItem('ecommerce_products', compressedData)
-        } catch (retryError) {
-          console.error('Failed to store even after cleanup:', retryError)
-          throw new Error('Storage is full or not available')
-        }
-      }
+      setMessage(`✅ Product "${product.title}" with ${product.quantity} pieces added successfully!`);
       
-      // التحقق من نجاح التخزين
-      const storedData = localStorage.getItem('ecommerce_products')
-      if (!storedData) {
-        throw new Error('Failed to store products')
-      }
-      
-      console.log(`✅ Successfully stored ${limitedProducts.length} products in localStorage`)
-      
-      // إضافة تأكيد إضافي للتخزين
-      const verificationData = JSON.parse(storedData)
-      if (verificationData.length !== limitedProducts.length) {
-        console.warn('Storage verification failed, data may be corrupted')
-      }
-      
-    } catch (error) {
-      console.error('Error storing products:', error)
-      
-      // محاولة حفظ في sessionStorage كبديل
-      try {
-        const fallbackData = JSON.stringify(updatedProducts.slice(-20))
-        sessionStorage.setItem('ecommerce_products_fallback', fallbackData)
-        console.log('✅ Saved to sessionStorage as fallback')
-        setMessage('⚠️ Warning: Product added to temporary storage. Data may be lost on page refresh.')
-      } catch (fallbackError) {
-        console.error('Fallback storage also failed:', fallbackError)
-        setMessage('❌ Error: Unable to save product. Please try again or clear browser data.')
-      }
-      
-      setTimeout(() => setMessage(''), 8000)
+      // Clear form and redirect to products page
+      clearForm();
+      navigate('/');
+    } else {
+      setMessage('❌ Error: Unable to save product. Please try again or clear browser data.');
+      setTimeout(() => setMessage(''), 5000);
     }
-    
-    // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
-    window.dispatchEvent(new Event('productsUpdated'))
-    
-    setMessage(`✅ Product "${product.title}" with ${product.quantity} pieces added successfully!`)
-    
-    // Clear form and redirect to products page
-    clearForm()
-    navigate('/')
   }
 
   const handleEditSubmit = async (e) => {
@@ -408,17 +323,20 @@ export default function AddProducts({ darkMode = false }) {
       return
     }
 
-    // تحديث المنتج محلياً فقط
-    const updatedProductLocal = {
+    // تحديث المنتج باستخدام النظام المحسن
+    const updatedProductData = {
           ...editingProduct,
           price: parseFloat(editingProduct.price),
           quantity: parseInt(editingProduct.quantity),
           updatedAt: new Date().toISOString(),
           updatedBy: `${localStorage.getItem('currentUserEmail') || localStorage.getItem('loggedInUser') || localStorage.getItem('userEmail') || 'Admin'} (Admin)`
         }
-        const updatedProductsLocal = products.map(product => product.id === editingProduct.id ? updatedProductLocal : product)
-        setProducts(updatedProductsLocal)
-        try { localStorage.setItem('ecommerce_products', JSON.stringify(updatedProductsLocal)) } catch {}
+    const success = productStorage.updateProduct(editingProduct.id, updatedProductData);
+    
+    if (success) {
+      const updatedProducts = products.map(product => product.id === editingProduct.id ? updatedProductData : product);
+      setProducts(updatedProducts);
+    }
 
         window.dispatchEvent(new Event('productsUpdated'))
         setMessage(`✅ Product "${editingProduct.title}" updated`)
@@ -463,14 +381,13 @@ export default function AddProducts({ darkMode = false }) {
         })
 
         setProducts(updatedProducts)
-        localStorage.setItem('ecommerce_products', JSON.stringify(updatedProducts))
+        productStorage.saveProducts(updatedProducts)
 
         // إرسال حدث مخصص لتحديث المنتجات في الصفحة الرئيسية
         window.dispatchEvent(new Event('productsUpdated'))
 
         setMessage(`✅ Category "${categoryToDelete}" deleted successfully! Products moved to "Other" category.`)
         setTimeout(() => setMessage(''), 4000)
-        console.log(`✅ Category "${categoryToDelete}" deleted and products updated`)
       } catch (error) {
         console.error('Error deleting category:', error)
         setMessage('⚠️ Error deleting category')
@@ -496,7 +413,7 @@ export default function AddProducts({ darkMode = false }) {
 
     const updatedCategories = [...categories, categoryName]
     setCategories(updatedCategories)
-    localStorage.setItem('ecommerce_categories', JSON.stringify(updatedCategories))
+    productStorage.saveCategories(updatedCategories)
     
     setNewCategory('')
     setShowCategoryForm(false)
@@ -562,11 +479,11 @@ export default function AddProducts({ darkMode = false }) {
         </div>
       )}
 
-      {/* Strapi Products (read-only) */}
+      {/* Local Products (read-only) */}
       {!showCategoriesSection && productList && productList.length > 0 && (
         <div className="products-section" style={{ marginTop: '16px' }}>
           <div className="products-header">
-            <h2>Strapi Products ({productList.length})</h2>
+            <h2>Local Products ({productList.length})</h2>
           </div>
           <div className='products-grid'>
                 {/* تم حذف استخدام ProductItem لعدم تعريفه */}
@@ -906,30 +823,21 @@ export default function AddProducts({ darkMode = false }) {
                         }
                         
                         if (window.confirm('Are you sure you want to delete this product?')) {
-                          const updatedProducts = products.filter(p => p.id !== product.id)
-                          setProducts(updatedProducts)
+                          // حذف المنتج باستخدام النظام المحسن
+                          const success = productStorage.deleteProduct(product.id);
                           
-                          try {
-                            const limitedProducts = updatedProducts.slice(-50)
-                            const compressedData = JSON.stringify(limitedProducts)
-                            localStorage.setItem('ecommerce_products', compressedData)
+                          if (success) {
+                            const updatedProducts = products.filter(p => p.id !== product.id);
+                            setProducts(updatedProducts);
                             
-                            const storedData = localStorage.getItem('ecommerce_products')
-                            if (!storedData) {
-                              throw new Error('Failed to store products')
-                            }
+                            window.dispatchEvent(new Event('productsUpdated'));
                             
-                            console.log(`✅ Successfully deleted product. ${limitedProducts.length} products remaining in localStorage`)
-                          } catch (error) {
-                            console.error('Error deleting product:', error)
-                            setMessage('⚠️ Warning: Product deleted but storage may be limited.')
-                            setTimeout(() => setMessage(''), 5000)
+                            setMessage(`Product "${productToDelete.title}" deleted successfully! Remaining products: ${updatedProducts.length}`);
+                            setTimeout(() => setMessage(''), 3000);
+                          } else {
+                            setMessage('⚠️ Warning: Product may not have been deleted properly.');
+                            setTimeout(() => setMessage(''), 5000);
                           }
-                          
-                          window.dispatchEvent(new Event('productsUpdated'))
-                          
-                          setMessage(`Product "${productToDelete.title}" deleted successfully! Remaining products: ${updatedProducts.length}`)
-                          setTimeout(() => setMessage(''), 3000)
                         }
                       }}
                       title="Delete Product"

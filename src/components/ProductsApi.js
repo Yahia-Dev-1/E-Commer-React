@@ -13,7 +13,7 @@ export default function ProductsApi() {
         const res = await ProductApis.getLatestProducts()
         setProductList(res?.data?.data || [])
       } catch (e) {
-        setError('فشل في تحميل المنتجات من Strapi')
+        setError('فشل في تحميل المنتجات من الخادم المحلي')
       } finally {
         setLoading(false)
       }

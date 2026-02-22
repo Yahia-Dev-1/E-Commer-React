@@ -1,28 +1,11 @@
 import React from 'react'
 
-function resolveMediaBaseUrl() {
-  const apiUrl = process.env.REACT_APP_STRAPI_URL || 'http://localhost:1337/api'
-  // Derive media base by removing trailing /api if present
-  if (apiUrl.endsWith('/api')) return apiUrl.slice(0, -4)
-  return apiUrl
-}
-
 export default function ProductItem({ product }) {
-  const mediaBase = process.env.REACT_APP_STRAPI_MEDIA_URL || resolveMediaBaseUrl()
-
   const id = product?.id
-  const attrs = product?.attributes || {}
-
-  const title = attrs.titel || 'No title'
-  const description = attrs.description || ''
-  const price = attrs.price ?? ''
-
-  const rawUrl = attrs.img?.data?.attributes?.formats?.medium?.url
-    || attrs.img?.data?.attributes?.formats?.small?.url
-    || attrs.img?.data?.attributes?.url
-  const imageUrl = rawUrl
-    ? (rawUrl.startsWith('http') ? rawUrl : `${mediaBase}${rawUrl}`)
-    : 'https://via.placeholder.com/400x400?text=No+Image'
+  const title = product?.title || product?.name || 'No title'
+  const description = product?.description || ''
+  const price = product?.price ?? ''
+  const imageUrl = product?.image || product?.img || product?.imageUrl || 'https://via.placeholder.com/400x400?text=No+Image'
 
   return (
     <div className="p-3 bg-white rounded-md shadow-sm dark:bg-[#1f2937]">
