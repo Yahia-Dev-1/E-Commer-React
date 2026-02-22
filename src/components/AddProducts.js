@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/AddProducts.css';
-import emailjs from 'emailjs-com';
+
 import productStorage from '../utils/productStorage';
 // import { updateProduct, createProduct, getProducts, getProduct, deleteProduct } from '../apis/ProductApis';
 // import ProductItem from './ProductItem';
 // import { normalizeProduct } from '../apis/normalizeProduct';
 
 
-
 // import { updateProduct, createProduct, getProducts, getProduct, deleteProduct } from '../apis/ProductApis';
 // import ProductItem from './ProductItem'
 // import { normalizeStrapiProduct } from '../apis/normalizeProduct'
-
 
 
 export default function AddProducts({ darkMode = false }) {
@@ -24,11 +22,11 @@ export default function AddProducts({ darkMode = false }) {
   },[])
 	
   const navigate = useNavigate()
+
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [showStats, setShowStats] = useState(false)
   const [showCategoriesSection, setShowCategoriesSection] = useState(false)
   const [showCategoryForm, setShowCategoryForm] = useState(false)
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
@@ -50,6 +48,46 @@ export default function AddProducts({ darkMode = false }) {
     'yahiapro400@gmail.com',
     'yahiacool2009@gmail.com'
   ]
+
+  const loadProducts = () => {
+    try {
+      const products = productStorage.getProducts();
+      setProducts(products);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      setProducts([]);
+    }
+  }
+
+  const loadCategories = () => {
+    try {
+      const categories = productStorage.getCategories();
+      setCategories(categories);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      setCategories(['electronics', 'clothing', 'books', 'home', 'sports', 'other']);
+    }
+  }
+
+  // دالة لتنظيف التخزين
+  const cleanupStorage = () => {
+    try {
+      // استخدام وظيفة التنظيف من النظام المحسن
+      productStorage.cleanup();
+      
+      // تنظيف sessionStorage
+      const keysToRemove = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.startsWith('temp_') || key.startsWith('backup_'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => sessionStorage.removeItem(key));
+    } catch (error) {
+      console.error('Error during storage cleanup:', error);
+    }
+  };
 
   const isProtectedAdmin = () => {
   const currentUserEmail = localStorage.getItem('currentUserEmail') || 
@@ -169,45 +207,7 @@ export default function AddProducts({ darkMode = false }) {
       document.removeEventListener('mousedown', handleClickOutside)
       clearTimeout(window.storageTimeout)
     }
-  }, [navigate, loadProducts, productStorage])
-
-  const loadProducts = () => {
-    try {
-      const products = productStorage.getProducts();
-      setProducts(products);
-    } catch (error) {
-      console.error('Error loading products:', error);
-      setProducts([]);
-    }
-  }
-
-  const loadCategories = () => {
-    try {
-      const categories = productStorage.getCategories();
-      setCategories(categories);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-      setCategories(['electronics', 'clothing', 'books', 'home', 'sports', 'other']);
-    }
-  }
-
-  // دالة لتنظيف التخزين
-  const cleanupStorage = () => {
-    try {
-      // استخدام وظيفة التنظيف من النظام المحسن
-      productStorage.cleanup();
-      
-      // تنظيف sessionStorage
-      try {
-        sessionStorage.clear()
-      } catch (e) {
-        console.warn('Failed to clear sessionStorage:', e)
-      }
-      
-    } catch (error) {
-      console.error('Error during storage cleanup:', error)
-    }
-  }
+  }, [navigate])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target

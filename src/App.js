@@ -3,7 +3,7 @@ import Nav from './components/nav';
 import Cart from './components/cart';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async';
-import { useState, useEffect, Suspense, lazy } from 'react'
+import { useState, useEffect, Suspense, lazy, useCallback } from 'react'
 import database from './utils/database'
 import React from 'react';
 // import { ProductsProvider } from './context/ProductsContext';
@@ -105,7 +105,7 @@ function AppContent() {
   }
 
   // Handle products update
-  const handleProductsUpdate = () => {
+  const handleProductsUpdate = useCallback(() => {
     // Reload immediately and also with delay to ensure we get the latest data
     loadProducts()
     setProductsVersion(prev => prev + 1)
@@ -114,7 +114,7 @@ function AppContent() {
       loadProducts()
       setProductsVersion(prev => prev + 1)
     }, 100)
-  }
+  }, [loadProducts, setProductsVersion])
 
   // Check for saved user and cart data on component mount
   useEffect(() => {
@@ -177,7 +177,7 @@ function AppContent() {
     return () => {
       window.removeEventListener('productsUpdated', handleProductsUpdate)
     }
-  }, [handleProductsUpdate])
+  }, [])
 
   // Additional effect to listen for localStorage changes
   useEffect(() => {

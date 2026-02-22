@@ -147,8 +147,15 @@ app.delete('/api/products/:id', (req, res) => {
 });
 
 // Serve static files from the React app build folder
+// Handle API routes first, then serve React app for all other non-API routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build/index.html'));
+  // Check if this is an API request - if so, let it 404 since it wasn't caught by the API routes above
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({ error: 'API endpoint not found' });
+  } else {
+    // For all other requests, serve the React app (for client-side routing)
+    res.sendFile(path.join(__dirname, 'build/index.html'));
+  }
 });
 
 app.listen(PORT, () => {
