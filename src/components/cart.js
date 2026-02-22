@@ -17,7 +17,7 @@ export default function Cart({ cartItems, updateQuantity, clearCart, createOrder
     addressInCountry: '',
     additionalInfo: ''
   })
-  const [removedItems, setRemovedItems] = useState([]);
+
 
   useEffect(() => {
     const existingProducts = JSON.parse(localStorage.getItem('ecommerce_products') || '[]');
@@ -29,9 +29,6 @@ export default function Cart({ cartItems, updateQuantity, clearCart, createOrder
         updateQuantity(item.id, 0);
       }
     });
-    if (removed.length > 0) {
-      setRemovedItems(removed);
-    }
   }, [cartItems, updateQuantity]);
 
 

@@ -7,49 +7,13 @@ import productStorage from '../utils/productStorage';
 // import ProductItem from './ProductItem';
 // import { normalizeProduct } from '../apis/normalizeProduct';
 
-// دالة لإرسال بريد إلكتروني عند رفض الطلب (مثال باستخدام EmailJS)
-function sendRejectionEmail(userEmail, productTitle) {
-  // إعداد بيانات البريد
-  const templateParams = {
-    to_email: userEmail,
-    message: `تم رفض طلبك لإضافة المنتج: ${productTitle}. إذا كان لديك أي استفسار تواصل مع الإدارة.`
-  };
-  // استبدل هذه القيم بقيمك من EmailJS
-  const serviceID = 'YOUR_SERVICE_ID';
-  const templateID = 'YOUR_TEMPLATE_ID';
-  const userID = 'YOUR_USER_ID';
 
-  emailjs.send(serviceID, templateID, templateParams, userID)
-    .then((response) => {
-      // Email sent successfully
-    }, (err) => {
-      console.error('Failed to send email:', err);
-    });
-}
 
 // import { updateProduct, createProduct, getProducts, getProduct, deleteProduct } from '../apis/ProductApis';
 // import ProductItem from './ProductItem'
 // import { normalizeStrapiProduct } from '../apis/normalizeProduct'
 
-function EditProductModal({ product, onClose, onSave }) {
-  const [formData, setFormData] = useState({
-    title: product.attributes.title,
-    description: product.attributes.description,
-    price: product.attributes.price,
-    stock: product.attributes.stock,
-  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // تم حذف كود التعديل المرتبط بـ updateProduct
-    onSave(formData);
-    onClose();
-  };
-
-  // ...existing code...
-  // تم حذف أو تعليق أي استخدام لـ ProductItem
-  // ...existing code...
-}
 
 export default function AddProducts({ darkMode = false }) {
   const [productList,setProductList]= useState([])
@@ -205,7 +169,7 @@ export default function AddProducts({ darkMode = false }) {
       document.removeEventListener('mousedown', handleClickOutside)
       clearTimeout(window.storageTimeout)
     }
-  }, [navigate])
+  }, [navigate, loadProducts, productStorage])
 
   const loadProducts = () => {
     try {

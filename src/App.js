@@ -177,7 +177,7 @@ function AppContent() {
     return () => {
       window.removeEventListener('productsUpdated', handleProductsUpdate)
     }
-  }, [])
+  }, [handleProductsUpdate])
 
   // Additional effect to listen for localStorage changes
   useEffect(() => {
