@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 
 // SEO Component for dynamic meta tag management
@@ -17,78 +17,7 @@ const SEO = ({
 }) => {
   const location = useLocation();
 
-  useEffect(() => {
-    // Update meta tags
-    updateMetaTag('title', title);
-    updateMetaTag('description', description);
-    updateMetaTag('keywords', keywords);
-    updateMetaTag('og:title', title);
-    updateMetaTag('og:description', description);
-    updateMetaTag('og:image', image);
-    updateMetaTag('og:url', url);
-    updateMetaTag('og:type', type);
-    updateMetaTag('article:author', author);
-    updateMetaTag('article:published_time', publishedTime);
-    updateMetaTag('article:modified_time', modifiedTime);
-    updateMetaTag('article:section', section);
-    updateMetaTag('article:tag', tags ? tags.join(', ') : '');
-    updateMetaTag('og:locale', location);
-
-    // Update canonical URL
-    updateCanonicalUrl(url || window.location.href);
-
-    // Add structured data for current page
-    const addStructuredData = () => {
-      // Remove existing structured data
-      const existingScripts = document.querySelectorAll('script[data-seo="true"]');
-      existingScripts.forEach(script => script.remove());
-
-      // Add new structured data based on page type
-      const structuredData = getStructuredData();
-      if (structuredData) {
-        const script = document.createElement('script');
-        script.setAttribute('type', 'application/ld+json');
-        script.setAttribute('data-seo', 'true');
-        script.textContent = JSON.stringify(structuredData);
-        document.head.appendChild(script);
-      }
-    };
-    
-    addStructuredData();
-  }, [title, description, keywords, image, url, type, author, publishedTime, modifiedTime, section, tags, location]);
-
-  const updateMetaTag = (name, content) => {
-    if (!content) return;
-
-    let meta = document.querySelector(`meta[name="${name}"]`);
-    if (!meta) {
-      meta = document.querySelector(`meta[property="${name}"]`);
-    }
-    
-    if (!meta) {
-      meta = document.createElement('meta');
-      if (name.startsWith('og:') || name.startsWith('article:')) {
-        meta.setAttribute('property', name);
-      } else {
-        meta.setAttribute('name', name);
-      }
-      document.head.appendChild(meta);
-    }
-    
-    meta.setAttribute('content', content);
-  };
-
-  const updateCanonicalUrl = (url) => {
-    let canonical = document.querySelector('link[rel="canonical"]');
-    if (!canonical) {
-      canonical = document.createElement('link');
-      canonical.setAttribute('rel', 'canonical');
-      document.head.appendChild(canonical);
-    }
-    canonical.setAttribute('href', url);
-  };
-
-  const getStructuredData = () => {
+  const getStructuredData = useCallback(() => {
     const baseUrl = 'https://yahia-dev-1.github.io/E-Commer-React';
     
     switch (type) {
@@ -176,7 +105,79 @@ const SEO = ({
           }
         };
     }
+  }, [title, description, image, url, type, author, publishedTime, modifiedTime]);
+
+  useEffect(() => {
+    // Update meta tags
+    updateMetaTag('title', title);
+    updateMetaTag('description', description);
+    updateMetaTag('keywords', keywords);
+    updateMetaTag('og:title', title);
+    updateMetaTag('og:description', description);
+    updateMetaTag('og:image', image);
+    updateMetaTag('og:url', url);
+    updateMetaTag('og:type', type);
+    updateMetaTag('article:author', author);
+    updateMetaTag('article:published_time', publishedTime);
+    updateMetaTag('article:modified_time', modifiedTime);
+    updateMetaTag('article:section', section);
+    updateMetaTag('article:tag', tags ? tags.join(', ') : '');
+    updateMetaTag('og:locale', location);
+
+    // Update canonical URL
+    updateCanonicalUrl(url || window.location.href);
+
+    // Add structured data for current page
+    const addStructuredData = () => {
+      // Remove existing structured data
+      const existingScripts = document.querySelectorAll('script[data-seo="true"]');
+      existingScripts.forEach(script => script.remove());
+
+      // Add new structured data based on page type
+      const structuredData = getStructuredData();
+      if (structuredData) {
+        const script = document.createElement('script');
+        script.setAttribute('type', 'application/ld+json');
+        script.setAttribute('data-seo', 'true');
+        script.textContent = JSON.stringify(structuredData);
+        document.head.appendChild(script);
+      }
+    };
+    
+    addStructuredData();
+  }, [title, description, keywords, image, url, type, author, publishedTime, modifiedTime, section, tags, location, getStructuredData]);
+
+  const updateMetaTag = (name, content) => {
+    if (!content) return;
+
+    let meta = document.querySelector(`meta[name="${name}"]`);
+    if (!meta) {
+      meta = document.querySelector(`meta[property="${name}"]`);
+    }
+    
+    if (!meta) {
+      meta = document.createElement('meta');
+      if (name.startsWith('og:') || name.startsWith('article:')) {
+        meta.setAttribute('property', name);
+      } else {
+        meta.setAttribute('name', name);
+      }
+      document.head.appendChild(meta);
+    }
+    
+    meta.setAttribute('content', content);
   };
+
+  const updateCanonicalUrl = (url) => {
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', url);
+  };
+
 
   return null; // This component doesn't render anything
 };
