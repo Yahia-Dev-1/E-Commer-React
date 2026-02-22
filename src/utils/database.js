@@ -1,5 +1,4 @@
-// Enhanced database using the new storage system
-// import { get, set, remove, initializeStorage, getStorageUsage, getStorageHealth } from './enhancedStorage.js'
+// Enhanced database using localStorage
 
 class Database {
   constructor() {

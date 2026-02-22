@@ -48,37 +48,102 @@ export default function Login({ onLogin, darkMode = false }) {
       }
 
       if (isLogin) {
-        // Login
-        const user = database.validateLogin(formData.email, formData.password);
-        if (user) {
-          setSuccess('Login successful!');
-          // Save current user email to localStorage for admin access
-          localStorage.setItem('currentUserEmail', user.email);
-          setTimeout(() => {
-            onLogin(user);
-            navigate('/');
-          }, 1000);
-        } else {
-          setError('Invalid email or password');
+        // Try API login first
+        try {
+          const response = await fetch('/api/users/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: formData.email,
+              password: formData.password
+            })
+          });
+
+          if (response.ok) {
+            const user = await response.json();
+            setSuccess('Login successful!');
+            localStorage.setItem('currentUserEmail', user.email);
+            setTimeout(() => {
+              onLogin(user);
+              navigate('/');
+            }, 1000);
+          } else {
+            // Fallback to localStorage
+            const user = database.validateLogin(formData.email, formData.password);
+            if (user) {
+              setSuccess('Login successful!');
+              localStorage.setItem('currentUserEmail', user.email);
+              setTimeout(() => {
+                onLogin(user);
+                navigate('/');
+              }, 1000);
+            } else {
+              setError('Invalid email or password');
+            }
+          }
+        } catch (apiError) {
+          console.warn('API login failed, using localStorage:', apiError);
+          // Fallback to localStorage
+          const user = database.validateLogin(formData.email, formData.password);
+          if (user) {
+            setSuccess('Login successful!');
+            localStorage.setItem('currentUserEmail', user.email);
+            setTimeout(() => {
+              onLogin(user);
+              navigate('/');
+            }, 1000);
+          } else {
+            setError('Invalid email or password');
+          }
         }
       } else {
-        // Register new user
+        // Register new user - try API first
         try {
-          const newUser = database.registerUser({
-            email: formData.email,
-            password: formData.password,
-            name: formData.email.split('@')[0]
+          const response = await fetch('/api/users/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: formData.email,
+              password: formData.password,
+              name: formData.email.split('@')[0]
+            })
           });
-          
-          setSuccess('Account created successfully!');
-          // Save current user email to localStorage for admin access
-          localStorage.setItem('currentUserEmail', newUser.email);
-          setTimeout(() => {
-            onLogin(newUser);
-            navigate('/');
-          }, 1000);
-        } catch (error) {
-          setError(error.message);
+
+          if (response.ok) {
+            const newUser = await response.json();
+            setSuccess('Account created successfully!');
+            localStorage.setItem('currentUserEmail', newUser.email);
+            setTimeout(() => {
+              onLogin(newUser);
+              navigate('/');
+            }, 1000);
+          } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Registration failed');
+          }
+        } catch (apiError) {
+          console.warn('API registration failed, using localStorage:', apiError);
+          // Fallback to localStorage
+          try {
+            const newUser = database.registerUser({
+              email: formData.email,
+              password: formData.password,
+              name: formData.email.split('@')[0]
+            });
+            
+            setSuccess('Account created successfully!');
+            localStorage.setItem('currentUserEmail', newUser.email);
+            setTimeout(() => {
+              onLogin(newUser);
+              navigate('/');
+            }, 1000);
+          } catch (error) {
+            setError(error.message || 'Registration failed');
+          }
         }
       }
     } catch (error) {

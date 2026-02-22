@@ -6,7 +6,6 @@ import { HelmetProvider } from 'react-helmet-async';
 import { useState, useEffect, Suspense, lazy, useCallback } from 'react'
 import database from './utils/database'
 import React from 'react';
-// import { ProductsProvider } from './context/ProductsContext';
 
 // Lazy load components for better performance
 const About = lazy(() => import('./components/About'))
@@ -64,9 +63,14 @@ function AppContent() {
 
   // Load products function
   const loadProducts = useCallback(() => {
-    // Try to load products from local API first
+    // Try to load products from API first
     fetch('/api/products')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
         const products = Array.isArray(data)
           ? data.map(item => ({
@@ -82,9 +86,11 @@ function AppContent() {
             }))
           : [];
         setProducts(products);
+        // Also save to localStorage as backup
         localStorage.setItem('ecommerce_products', JSON.stringify(products));
       })
       .catch(err => {
+        console.warn('API request failed, using localStorage:', err);
         // If API fails, use local storage data
         try {
           const localStorageData = localStorage.getItem('ecommerce_products');
@@ -98,6 +104,7 @@ function AppContent() {
             setProducts([]);
           }
         } catch (error) {
+          console.error('Error loading from localStorage:', error);
           setProducts([]);
         }
       });
@@ -429,15 +436,15 @@ function AppContent() {
     localStorage.removeItem('cartItems')
   }
 
-  const createOrder = (shippingData = null) => {
+  const createOrder = async (shippingData = null) => {
     if (cartItems.length === 0) return
+    if (!user) {
+      alert('Please login to create an order');
+      return;
+    }
     
-    const newOrder = {
-      orderNumber: `ORD-${Date.now().toString().slice(-6)}`,
-      date: new Date().toISOString(),
-      status: 'Processing',
-      userId: user?.id,
-      userEmail: user?.email,
+    const orderData = {
+      userEmail: user.email,
       items: cartItems.map(item => ({
         id: item.id,
         name: item.title,
@@ -449,15 +456,66 @@ function AppContent() {
       shipping: shippingData || {}
     }
     
-    // حفظ الطلب في قاعدة البيانات
-    const savedOrder = database.saveOrder(newOrder)
-    setOrders(prevOrders => [savedOrder, ...prevOrders])
-    
-    // طرح الكمية المباعة من المنتجات
-    updateProductQuantities(cartItems)
-    
-    setCartItems([])
-    localStorage.removeItem('cartItems')
+    try {
+      // Try API first
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-email': user.email
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      if (response.ok) {
+        const savedOrder = await response.json();
+        setOrders(prevOrders => [savedOrder, ...prevOrders]);
+        
+        // Also save to localStorage as backup
+        const localStorageOrder = {
+          ...savedOrder,
+          userId: user.id
+        };
+        database.saveOrder(localStorageOrder);
+        
+        // Reload products to get updated quantities
+        loadProducts();
+        
+        setCartItems([]);
+        localStorage.removeItem('cartItems');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create order');
+      }
+    } catch (apiError) {
+      console.warn('API order creation failed, using localStorage:', apiError);
+      // Fallback to localStorage
+      const newOrder = {
+        orderNumber: `ORD-${Date.now().toString().slice(-6)}`,
+        date: new Date().toISOString(),
+        status: 'Processing',
+        userId: user?.id,
+        userEmail: user?.email,
+        items: cartItems.map(item => ({
+          id: item.id,
+          name: item.title,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image
+        })),
+        total: cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        shipping: shippingData || {}
+      }
+      
+      const savedOrder = database.saveOrder(newOrder);
+      setOrders(prevOrders => [savedOrder, ...prevOrders]);
+      
+      // Update product quantities locally
+      updateProductQuantities(cartItems);
+      
+      setCartItems([]);
+      localStorage.removeItem('cartItems');
+    }
   }
 
   // دالة جديدة لطرح الكمية المباعة من المنتجات
@@ -734,9 +792,12 @@ function AppContent() {
 }
 
 function App() {
+  // Remove basename for Vercel deployment
+  const basename = process.env.NODE_ENV === 'production' ? '' : '/E-Commer-React';
+  
   return (
     <HelmetProvider>
-      <BrowserRouter basename="/E-Commer-React">
+      <BrowserRouter basename={basename}>
         <AppContent />
       </BrowserRouter>
     </HelmetProvider>

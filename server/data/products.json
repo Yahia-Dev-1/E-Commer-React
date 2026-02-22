@@ -1,0 +1,90 @@
+[
+  {
+    "id": 1,
+    "title": "Hoodie",
+    "description": "Comfortable cotton hoodie",
+    "price": 29.99,
+    "quantity": 10,
+    "image": "https://via.placeholder.com/400x400?text=Hoodie",
+    "category": "clothing",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "title": "T-Shirt",
+    "description": "Casual cotton t-shirt",
+    "price": 19.99,
+    "quantity": 20,
+    "image": "https://via.placeholder.com/400x400?text=T-Shirt",
+    "category": "clothing",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "title": "Jeans",
+    "description": "Classic denim jeans",
+    "price": 49.99,
+    "quantity": 5,
+    "image": "https://via.placeholder.com/400x400?text=Jeans",
+    "category": "clothing",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "title": "Sneakers",
+    "description": "Comfortable casual sneakers",
+    "price": 79.99,
+    "quantity": 0,
+    "image": "https://via.placeholder.com/400x400?text=Sneakers",
+    "category": "footwear",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 5,
+    "title": "Running Shoes",
+    "description": "High-performance running shoes",
+    "price": 89.99,
+    "quantity": 15,
+    "image": "https://via.placeholder.com/400x400?text=Running+Shoes",
+    "category": "footwear",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "title": "Watch",
+    "description": "Stylish wristwatch",
+    "price": 129.99,
+    "quantity": 8,
+    "image": "https://via.placeholder.com/400x400?text=Watch",
+    "category": "accessories",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 7,
+    "title": "Backpack",
+    "description": "Durable travel backpack",
+    "price": 59.99,
+    "quantity": 25,
+    "image": "https://via.placeholder.com/400x400?text=Backpack",
+    "category": "accessories",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 8,
+    "title": "Cap",
+    "description": "Adjustable baseball cap",
+    "price": 15.99,
+    "quantity": 12,
+    "image": "https://via.placeholder.com/400x400?text=Cap",
+    "category": "accessories",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+]

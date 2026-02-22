@@ -3,14 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/AddProducts.css';
 
 import productStorage from '../utils/productStorage';
-// import { updateProduct, createProduct, getProducts, getProduct, deleteProduct } from '../apis/ProductApis';
-// import ProductItem from './ProductItem';
-// import { normalizeProduct } from '../apis/normalizeProduct';
-
-
-// import { updateProduct, createProduct, getProducts, getProduct, deleteProduct } from '../apis/ProductApis';
-// import ProductItem from './ProductItem'
-// import { normalizeStrapiProduct } from '../apis/normalizeProduct'
 
 
 export default function AddProducts({ darkMode = false }) {
@@ -446,7 +438,14 @@ export default function AddProducts({ darkMode = false }) {
             <h2>Local Products ({productList.length})</h2>
           </div>
           <div className='products-grid'>
-                {/* تم حذف استخدام ProductItem لعدم تعريفه */}
+            {productList.map((product) => (
+              <div key={product.id} className="product-card">
+                <img src={product.image} alt={product.title} />
+                <h3>{product.title}</h3>
+                <p>${product.price}</p>
+                <p>Quantity: {product.quantity}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

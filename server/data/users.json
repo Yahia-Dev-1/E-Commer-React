@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "email": "yahiapro400@gmail.com",
+    "password": "yahia2024",
+    "name": "Yahia Pro",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "orders": [],
+    "isProtected": true
+  },
+  {
+    "id": 2,
+    "email": "yahiacool2009@gmail.com",
+    "password": "yahia2009",
+    "name": "Yahia Cool",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "orders": [],
+    "isProtected": true
+  }
+]
