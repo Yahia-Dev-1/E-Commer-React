@@ -23,7 +23,6 @@ export default function AddProducts({ darkMode = false }) {
 	
   const navigate = useNavigate()
 
-  // const [user, setUser] = useState(null) // Not used
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -127,7 +126,6 @@ export default function AddProducts({ darkMode = false }) {
       const users = JSON.parse(localStorage.getItem('users') || '[]')
       if (users.length === 0) {
         // If no users exist, allow access (first time setup)
-        setUser({ email: 'admin@gmail.com' })
         loadProducts()
         loadCategories()
         setIsLoading(false)
@@ -146,7 +144,6 @@ export default function AddProducts({ darkMode = false }) {
       // If user not found in users array, check if it's an admin email
       const adminEmails = ['yahiapro400@gmail.com', 'yahiacool2009@gmail.com']
       if (adminEmails.includes(currentUserEmail)) {
-        setUser({ email: currentUserEmail })
         loadProducts()
         loadCategories()
         setIsLoading(false)
@@ -163,7 +160,6 @@ export default function AddProducts({ darkMode = false }) {
       return
     }
 
-    setUser(currentUser)
     loadProducts()
     loadCategories()
     
