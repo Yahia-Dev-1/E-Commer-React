@@ -18,48 +18,44 @@ const SEO = ({
   const location = useLocation();
 
   useEffect(() => {
-    // Update document title
-    if (title) {
-      document.title = title;
-    }
-
     // Update meta tags
+    updateMetaTag('title', title);
     updateMetaTag('description', description);
     updateMetaTag('keywords', keywords);
-    updateMetaTag('author', author);
-
-    // Update Open Graph tags
     updateMetaTag('og:title', title);
     updateMetaTag('og:description', description);
     updateMetaTag('og:image', image);
-    updateMetaTag('og:url', url || window.location.href);
+    updateMetaTag('og:url', url);
     updateMetaTag('og:type', type);
-
-    // Update Twitter Card tags
-    updateMetaTag('twitter:title', title);
-    updateMetaTag('twitter:description', description);
-    updateMetaTag('twitter:image', image);
-
-    // Update article specific tags
-    if (type === 'article') {
-      updateMetaTag('article:published_time', publishedTime);
-      updateMetaTag('article:modified_time', modifiedTime);
-      updateMetaTag('article:section', section);
-      updateMetaTag('article:author', author);
-      
-      // Add article tags
-      tags.forEach((tag, index) => {
-        updateMetaTag(`article:tag:${index}`, tag);
-      });
-    }
+    updateMetaTag('article:author', author);
+    updateMetaTag('article:published_time', publishedTime);
+    updateMetaTag('article:modified_time', modifiedTime);
+    updateMetaTag('article:section', section);
+    updateMetaTag('article:tag', tags ? tags.join(', ') : '');
+    updateMetaTag('og:locale', location);
 
     // Update canonical URL
     updateCanonicalUrl(url || window.location.href);
 
     // Add structured data for current page
-    addStructuredData();
+    const addStructuredData = () => {
+      // Remove existing structured data
+      const existingScripts = document.querySelectorAll('script[data-seo="true"]');
+      existingScripts.forEach(script => script.remove());
 
-  }, [title, description, keywords, image, url, type, author, publishedTime, modifiedTime, section, tags, location, addStructuredData]);
+      // Add new structured data based on page type
+      const structuredData = getStructuredData();
+      if (structuredData) {
+        const script = document.createElement('script');
+        script.setAttribute('type', 'application/ld+json');
+        script.setAttribute('data-seo', 'true');
+        script.textContent = JSON.stringify(structuredData);
+        document.head.appendChild(script);
+      }
+    };
+    
+    addStructuredData();
+  }, [title, description, keywords, image, url, type, author, publishedTime, modifiedTime, section, tags, location]);
 
   const updateMetaTag = (name, content) => {
     if (!content) return;
@@ -90,22 +86,6 @@ const SEO = ({
       document.head.appendChild(canonical);
     }
     canonical.setAttribute('href', url);
-  };
-
-  const addStructuredData = () => {
-    // Remove existing structured data
-    const existingScripts = document.querySelectorAll('script[data-seo="true"]');
-    existingScripts.forEach(script => script.remove());
-
-    // Add new structured data based on page type
-    const structuredData = getStructuredData();
-    if (structuredData) {
-      const script = document.createElement('script');
-      script.setAttribute('type', 'application/ld+json');
-      script.setAttribute('data-seo', 'true');
-      script.textContent = JSON.stringify(structuredData);
-      document.head.appendChild(script);
-    }
   };
 
   const getStructuredData = () => {

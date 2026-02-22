@@ -176,7 +176,7 @@ function AppContent() {
     return () => {
       window.removeEventListener('productsUpdated', handleProductsUpdate)
     }
-  }, [])
+  }, [handleProductsUpdate, loadProducts])
 
   // Additional effect to listen for localStorage changes
   useEffect(() => {
@@ -192,7 +192,7 @@ function AppContent() {
     return () => {
       window.removeEventListener('storage', handleStorageChange)
     }
-  }, [])
+  }, [loadProducts])
 
   const addToCart = (product) => {
     if (!user) {

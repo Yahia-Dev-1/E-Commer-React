@@ -23,7 +23,7 @@ export default function AddProducts({ darkMode = false }) {
 	
   const navigate = useNavigate()
 
-  const [user, setUser] = useState(null)
+  // const [user, setUser] = useState(null) // Not used
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [showForm, setShowForm] = useState(false)
