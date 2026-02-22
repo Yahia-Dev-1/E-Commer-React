@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -8,7 +9,17 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('build'));
+
+// Check if we're in a Vercel environment and ensure build exists
+if (process.env.VERCEL) {
+  // In Vercel, the build is done as part of the deployment process
+  console.log("Running in Vercel environment");
+} else {
+  // Serve static files from build directory (only when running locally)
+  if (process.env.NODE_ENV === 'development') {
+    app.use(express.static('build'));
+  }
+}
 
 // Sample product data
 let products = [
@@ -146,17 +157,8 @@ app.delete('/api/products/:id', (req, res) => {
   res.json(deletedProduct);
 });
 
-// Serve static files from the React app build folder
-// Handle API routes first, then serve React app for all other non-API routes
-app.get('*', (req, res) => {
-  // Check if this is an API request - if so, let it 404 since it wasn't caught by the API routes above
-  if (req.path.startsWith('/api/')) {
-    res.status(404).json({ error: 'API endpoint not found' });
-  } else {
-    // For all other requests, serve the React app (for client-side routing)
-    res.sendFile(path.join(__dirname, 'build/index.html'));
-  }
-});
+// Only API routes are handled by the server
+// Static files and client-side routing are handled by Vercel's static serving
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
