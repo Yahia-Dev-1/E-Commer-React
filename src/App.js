@@ -792,12 +792,10 @@ function AppContent() {
 }
 
 function App() {
-  // Remove basename for Vercel deployment
-  const basename = process.env.NODE_ENV === 'production' ? '' : '/E-Commer-React';
-  
+  // No basename needed for Vercel - it handles routing automatically
   return (
     <HelmetProvider>
-      <BrowserRouter basename={basename}>
+      <BrowserRouter>
         <AppContent />
       </BrowserRouter>
     </HelmetProvider>
